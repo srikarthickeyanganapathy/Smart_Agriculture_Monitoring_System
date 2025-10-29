@@ -1,0 +1,6 @@
+@RecommendationsService_HostAddress = http://localhost:5258
+
+GET {{RecommendationsService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

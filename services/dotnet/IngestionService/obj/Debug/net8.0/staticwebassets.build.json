@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "tONl40lVwxeMB0EwSkXZYD69XUlenQnVTLCx6anMpmw=",
+  "Source": "IngestionService",
+  "BasePath": "_content/IngestionService",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}

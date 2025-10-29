@@ -1,0 +1,7 @@
+python - <<'PY'
+import numpy as np, os
+os.makedirs("C:\\Users\\SEC\\Desktop\\mern-ai-agro\\data", exist_ok=True)
+arr = np.random.rand(32,32,10).astype('float32')
+np.save("C:\\Users\\SEC\\Desktop\\mern-ai-agro\\data\\sample_cube.npy", arr)
+print("done")
+PY
