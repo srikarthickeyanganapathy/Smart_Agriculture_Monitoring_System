@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 
-namespace dotnet_service.Models // Note: namespace may be based on your folder name
+// Your namespace might be 'dotnet_service.Models'
+namespace dotnet_service.Models 
 {
     public class YieldReportData
     {
@@ -18,5 +19,11 @@ namespace dotnet_service.Models // Note: namespace may be based on your folder n
         
         [JsonPropertyName("timestamp")]
         public DateTime Timestamp { get; set; }
+
+        [JsonPropertyName("lat")]
+        public double Lat { get; set; }
+
+        [JsonPropertyName("longitude")]
+        public double Longitude { get; set; }
     }
 }

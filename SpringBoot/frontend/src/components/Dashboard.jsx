@@ -72,7 +72,8 @@ function Dashboard() {
       })
       .catch(err => {
         console.error("Error downloading report:", err);
-        alert("Failed to download report. Please check backend connection.");
+        // --- FIX THIS LINE ---
+        window.alert("Failed to download report. Please check backend connection.");
       });
   };
 

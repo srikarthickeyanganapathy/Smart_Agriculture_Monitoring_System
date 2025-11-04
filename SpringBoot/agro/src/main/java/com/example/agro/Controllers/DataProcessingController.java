@@ -82,26 +82,32 @@ public class DataProcessingController {
 
     @GetMapping("/yield-report")
     public ResponseEntity<Resource> getYieldReport() {
-        // The URL of your .NET service (running on port 7000)
         String dotnetReportUrl = "http://localhost:7000/api/report/yield-report";
 
         try {
-            // 1. Call the .NET API. We expect a raw byte array (the PDF)
-            byte[] pdfBytes = restTemplate.getForObject(dotnetReportUrl, byte[].class);
+            // 1. Fetch all data from *this* service's database
+            List<SensorReading> allReadings = repository.findAll();
+
+            // 2. Call the .NET API using POST, sending our data as the body
+            byte[] pdfBytes = restTemplate.postForObject(
+                dotnetReportUrl, 
+                allReadings, // <-- Send our data list
+                byte[].class
+            );
 
             if (pdfBytes == null) {
-                return ResponseEntity.status(500).body(null); // Handle error
+                return ResponseEntity.status(500).body(null);
             }
 
-            // 2. Create a Spring Resource from the byte array
+            // 3. Create a Spring Resource from the byte array
             ByteArrayResource resource = new ByteArrayResource(pdfBytes);
 
-            // 3. Set HTTP headers to tell the browser it's a file download
+            // 4. Set HTTP headers to tell the browser it's a file download
             HttpHeaders headers = new HttpHeaders();
-            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=yield_report.pdf");
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=dynamic_yield_report.pdf");
             headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_PDF_VALUE);
 
-            // 4. Return the file
+            // 5. Return the file
             return ResponseEntity.ok()
                     .headers(headers)
                     .contentLength(pdfBytes.length)

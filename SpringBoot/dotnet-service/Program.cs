@@ -4,15 +4,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 // --- Add services to the container ---
 
-// This tells .NET to use the Controller-based system
+// 1. Tell .NET we are using the Controller pattern
 builder.Services.AddControllers();
 
-// This registers your PdfService so it can be "injected"
-// into the ReportController
+// 2. Register our PdfService for dependency injection
 builder.Services.AddScoped<PdfService>();
 
-
-// (The rest of these are for API documentation)
+// 3. Add Swagger/OpenAPI for documentation
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -25,10 +23,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// app.UseHttpsRedirection(); // We can comment this out for simple http local testing
+// app.UseHttpsRedirection(); // Commented out for simple http testing
 app.UseAuthorization();
 
-// This tells .NET to find and use your Controllers
+// 4. Tell .NET to map requests to our Controllers
 app.MapControllers();
 
 app.Run();
