@@ -6,6 +6,4 @@ public class AlertDto {
     public String level;    // "info","warning","critical"
     public String message;
     public long timestamp;  // epoch ms
-
-    public AlertDto() {}
 }

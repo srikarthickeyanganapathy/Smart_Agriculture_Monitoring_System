@@ -4,7 +4,8 @@ import { adjustField, clearAlerts } from "../../api/analyticsAPI";
 
 export default function LiveAlerts({ fieldId }) {
   const { alertsMap, clearFieldAlertsLocal } = useAlerts();
-  const fieldAlerts = alertsMap[String(fieldId)] ? Object.entries(alertsMap[String(fieldId)]) : [];
+  // Using 'entries' as defined in the second block
+  const entries = alertsMap[String(fieldId)] ? Object.entries(alertsMap[String(fieldId)]) : [];
 
   const handleFix = async () => {
     try {
@@ -16,9 +17,7 @@ export default function LiveAlerts({ fieldId }) {
     }
   };
 
-  if (fieldAlerts.length === 0) {
-    return null;
-  }
+  if (!entries.length) return null;
 
   return (
     <div className="bg-white border border-gray-200 rounded-3xl p-8 shadow-lg">
@@ -31,13 +30,14 @@ export default function LiveAlerts({ fieldId }) {
           Field {fieldId}
         </h3>
         <p className="text-sm text-gray-500 mt-1">
-          {fieldAlerts.length} {fieldAlerts.length === 1 ? 'issue' : 'issues'} requiring attention
+          {entries.length} {entries.length === 1 ? 'issue' : 'issues'} requiring attention
         </p>
       </div>
       
       {/* Alerts List */}
       <div className="space-y-3 mb-6">
-        {fieldAlerts.map(([type, data]) => {
+        {entries.map(([type, data]) => {
+          // Conditional Styling Logic
           const bgColor = data.level === 'critical' 
             ? 'bg-gradient-to-br from-red-50 to-white' 
             : data.level === 'warning' 

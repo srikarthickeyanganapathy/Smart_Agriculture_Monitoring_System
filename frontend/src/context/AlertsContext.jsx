@@ -11,17 +11,9 @@ export function AlertsProvider({ children }) {
     let reconnectDelay = 1000;
 
     const connect = () => {
-      // 1. Retrieve the token
       const token = localStorage.getItem("token");
-      
-      // If no token, we can't connect yet (or handle as needed)
-      if (!token) {
-        console.warn("No token found, skipping SSE connection");
-        return;
-      }
-
-      // 2. Append token to the URL query string
-      es = new EventSource(`${ALERTS_SSE_URL}?token=${token}`);
+      const url = token ? `${ALERTS_SSE_URL}?token=${token}` : ALERTS_SSE_URL;
+      es = new EventSource(url);
 
       es.onopen = () => {
         console.log("SSE open");
@@ -31,7 +23,6 @@ export function AlertsProvider({ children }) {
       es.addEventListener("initial", (e) => {
         try {
           const data = JSON.parse(e.data || "{}");
-          // normalize keys to strings
           const normalized = {};
           Object.keys(data || {}).forEach(k => {
             normalized[String(k)] = data[k];
