@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("recommendation-service")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d52a15c4a8651ee70742c407ac399857718d99e0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+831ead5fc583d36fe7fafb88895d817e334413ef")]
 [assembly: System.Reflection.AssemblyProductAttribute("recommendation-service")]
 [assembly: System.Reflection.AssemblyTitleAttribute("recommendation-service")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
