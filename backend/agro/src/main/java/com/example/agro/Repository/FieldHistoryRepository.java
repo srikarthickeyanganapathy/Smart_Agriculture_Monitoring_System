@@ -6,5 +6,12 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface FieldHistoryRepository extends JpaRepository<FieldHistory, Long> {
-    // Additional query methods can be defined here if needed
+    FieldHistory findTopByFieldIdOrderBySnapshotTimeDesc(Integer fieldId);
+
+    java.util.List<FieldHistory> findByFieldIdOrderBySnapshotTimeDesc(Integer fieldId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT DISTINCT f.fieldId FROM FieldHistory f")
+    java.util.List<Integer> findDistinctFieldIds();
+
+    long countByFieldId(Integer fieldId);
 }

@@ -67,7 +67,7 @@ export function AlertsProvider({ children }) {
         console.error("SSE error", err);
         try { es.close(); } catch (_) {}
         setTimeout(() => {
-          reconnectDelay = Math.min(60000, reconnectDelay * 2);
+          reconnectDelay = Math.min(1000, reconnectDelay * 2);
           connect();
         }, reconnectDelay);
       };

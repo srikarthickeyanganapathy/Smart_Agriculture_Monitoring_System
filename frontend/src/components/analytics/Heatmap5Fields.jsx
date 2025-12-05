@@ -5,6 +5,10 @@ import { rainbowColor } from "../utils/color.js";
 
 export default function Heatmap5Fields({ fields }) {
   const navigate = useNavigate();
+  const safeNum = (v) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
 
   if (!fields || fields.length === 0) {
     return (
@@ -18,12 +22,12 @@ export default function Heatmap5Fields({ fields }) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 py-8">
-      {fields.map((field) => {
-        const plantsPreview = field.plants.slice(0, 100);
+      {fields.map((field, idx) => {
+        const plantsPreview = field.plants ? field.plants.slice(0, 100) : [];
         
         return (
           <div 
-            key={field.field_id} 
+            key={field.fieldId || field.field_id || idx} 
             className="bg-white border border-gray-200 rounded-3xl overflow-hidden transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] group"
           >
             {/* Header Section */}
@@ -31,21 +35,21 @@ export default function Heatmap5Fields({ fields }) {
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
                   <div className="inline-block px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold uppercase tracking-wider rounded-full mb-3">
-                    {field.crop_type}
+                    {field.cropType || field.crop_type || "Crop"}
                   </div>
                   <h3 className="text-2xl font-bold text-gray-900 mb-1">
-                    Field {field.field_id}
+                    Field {field.fieldId || field.field_id}
                   </h3>
                   <p className="text-sm text-gray-500">
-                    {field.plants.length} plants monitored
+                    {field.plants ? field.plants.length : 0} plants monitored
                   </p>
                 </div>
 
-                <NotificationBell fieldId={field.field_id} />
+                <NotificationBell fieldId={field.fieldId || field.field_id} />
               </div>
 
               <button 
-                onClick={() => navigate(`/field/${field.field_id}`)}
+                onClick={() => navigate(`/field/${field.fieldId || field.field_id}`)}
                 className="w-full bg-green-600 text-white font-semibold px-6 py-3 rounded-full transition-all duration-300 hover:bg-green-700 hover:scale-105 flex items-center justify-center gap-2 shadow-md group-hover:shadow-lg"
               >
                 <span>View Details</span>
@@ -80,7 +84,7 @@ export default function Heatmap5Fields({ fields }) {
                   NDVI
                 </div>
                 <div className="text-2xl font-bold text-gray-900">
-                  {field.avg_ndvi.toFixed(3)}
+                  {safeNum(field.avgNdvi || field.avg_ndvi).toFixed(3)}
                 </div>
               </div>
               <div className="text-center p-5 border-r border-gray-200 transition-all duration-200 hover:bg-gray-50">
@@ -88,7 +92,7 @@ export default function Heatmap5Fields({ fields }) {
                   Health
                 </div>
                 <div className="text-2xl font-bold text-green-600">
-                  {(field.avg_health * 100).toFixed(0)}%
+                  {(safeNum(field.avgHealth || field.avg_health) * 100).toFixed(0)}%
                 </div>
               </div>
               <div className="text-center p-5 transition-all duration-200 hover:bg-gray-50">
@@ -96,7 +100,7 @@ export default function Heatmap5Fields({ fields }) {
                   Yield
                 </div>
                 <div className="text-2xl font-bold text-gray-900">
-                  {field.avg_yield.toFixed(1)}
+                  {safeNum(field.avgYield || field.avg_yield).toFixed(1)}
                 </div>
               </div>
             </div>

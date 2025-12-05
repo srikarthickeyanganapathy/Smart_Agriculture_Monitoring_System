@@ -41,24 +41,25 @@ const CropRecommendation = () => {
     setSelectedFieldId(fid);
 
     if (fid) {
-      const field = fields.find(f => String(f.field_id) === fid);
+      // Robust find: match string or number, handle snake/camel case
+      const field = fields.find(f => String(f.fieldId || f.field_id) === fid);
       if (field) {
-        // Calculate real field averages from the plants array
-        const plants = field.plants || [];
-        const avg = (key) => {
-          if (!plants.length) return 0;
-          const sum = plants.reduce((acc, p) => acc + (p.agro?.[key] || 0), 0);
-          return sum / plants.length;
+        // Helper to calculate averages from plants if direct field props are missing
+        const calcAvg = (key) => {
+           if (!field.plants || !field.plants.length) return 0;
+           const sum = field.plants.reduce((acc, p) => acc + (Number(p.agro?.[key]) || 0), 0);
+           return sum / field.plants.length;
         };
 
+        // Use direct soil parameters from the backend, OR fallback to aggregated averages
         setAutoFilledData({
-          nitrogen: avg('Soil_N'),
-          phosphorus: avg('Soil_P'),
-          potassium: avg('Soil_K'),
-          ph: avg('Soil_pH'),
-          rainfall: avg('Irrigation') * 3, // Approx conversion: Irrigation level to rainfall
-          temperature: avg('Temperature'),
-          moisture: avg('SoilMoisture')
+          nitrogen: field.nitrogen || field.soil_n || calcAvg('Soil_N'),
+          phosphorus: field.phosphorus || field.soil_p || calcAvg('Soil_P'),
+          potassium: field.potassium || field.soil_k || calcAvg('Soil_K'),
+          ph: field.ph || field.soil_ph || calcAvg('Soil_pH') || 6.5,
+          rainfall: field.rainfall || (field.irrigation ? field.irrigation * 3 : calcAvg('Irrigation') * 3), 
+          temperature: field.temperature || calcAvg('Temperature'),
+          moisture: field.moisture || field.soil_moisture || calcAvg('SoilMoisture')
         });
       }
     } else {
@@ -94,11 +95,15 @@ const CropRecommendation = () => {
                   disabled={loading}
                 >
                   <option value="">-- Select a Field --</option>
-                  {fields.map(f => (
-                    <option key={f.field_id} value={f.field_id}>
-                      Field {f.field_id} (Health: {(f.avg_health * 100).toFixed(0)}%)
-                    </option>
-                  ))}
+                  {fields.map((f, idx) => {
+                    const id = f.fieldId || f.field_id || idx;
+                    const health = f.avgHealth || f.avg_health || 0;
+                    return (
+                      <option key={id} value={id}>
+                        Field {id} (Health: {(health * 100).toFixed(0)}%)
+                      </option>
+                    );
+                  })}
                 </select>
                 {selectedFieldId && (
                   <div className="flex items-center text-green-600 text-sm font-medium animate-fade-in">

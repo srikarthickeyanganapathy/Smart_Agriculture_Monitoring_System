@@ -43,26 +43,19 @@ const DiseasePrediction = () => {
     setFieldPlants([]);
 
     if (fid) {
-      const field = fields.find(f => String(f.field_id) === fid);
+      const field = fields.find(f => String(f.fieldId || f.field_id) === fid);
       if (field) {
         setFieldPlants(field.plants || []);
         
-        // Calculate real field averages from the plants array
-        const plants = field.plants || [];
-        const avg = (key) => {
-          if (!plants.length) return 0;
-          const sum = plants.reduce((acc, p) => acc + (p.agro?.[key] || 0), 0);
-          return sum / plants.length;
-        };
-
+        // Use direct soil parameters from the backend (Digital Twin state)
         setAutoFilledData({
           ndvi: field.avg_ndvi || 0.65,
-          temperature: avg('Temperature'),
-          moisture: avg('SoilMoisture'),
-          nitrogen: avg('Soil_N'),
-          phosphorus: avg('Soil_P'),
-          potassium: avg('Soil_K'),
-          irrigation: avg('Irrigation') 
+          temperature: field.temperature || 0,
+          moisture: field.moisture || 0,
+          nitrogen: field.nitrogen || 0,
+          phosphorus: field.phosphorus || 0,
+          potassium: field.potassium || 0,
+          irrigation: field.rainfall ? field.rainfall / 3 : (field.irrigation || 0) // Infer irrigation if rainfall is known
         });
       }
     } else {
@@ -119,11 +112,15 @@ const DiseasePrediction = () => {
                    disabled={loading}
                  >
                    <option value="">-- Select a Field --</option>
-                   {fields.map(f => (
-                     <option key={f.field_id} value={f.field_id}>
-                       Field {f.field_id} (NDVI: {f.avg_ndvi.toFixed(3)})
-                     </option>
-                   ))}
+                   {fields.map((f, idx) => {
+                     const id = f.fieldId || f.field_id || idx;
+                     const ndvi = f.avgNdvi || f.avg_ndvi || 0;
+                     return (
+                       <option key={id} value={id}>
+                         Field {id} (NDVI: {Number(ndvi).toFixed(3)})
+                       </option>
+                     );
+                   })}
                  </select>
                  {selectedFieldId && (
                    <div className="flex items-center text-red-600 text-sm font-medium animate-fade-in">
@@ -147,11 +144,15 @@ const DiseasePrediction = () => {
                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 transition-all bg-gray-50"
                    >
                      <option value="">-- Analyze Field Average --</option>
-                     {fieldPlants.map((p, idx) => (
-                       <option key={idx} value={p.plant_id}>
-                         Plant {p.plant_id} (NDVI: {Number(p.ndvi).toFixed(3)})
-                       </option>
-                     ))}
+                     {fieldPlants.map((p, idx) => {
+                        const pid = p.plantId || p.plant_id || idx;
+                        const ndvi = p.ndvi || (p.agro ? p.agro.ndvi : 0) || 0;
+                        return (
+                          <option key={idx} value={pid}>
+                            Plant {pid} (NDVI: {Number(ndvi).toFixed(3)})
+                          </option>
+                        );
+                     })}
                    </select>
                    <p className="text-xs text-gray-500 mt-2">
                      *Selecting a plant improves prediction accuracy by using specific plant metrics.

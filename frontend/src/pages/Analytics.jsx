@@ -8,7 +8,7 @@ const Analytics = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    startSimulation();
+    // startSimulation(); // Backend now auto-initializes if empty
 
     const fetchData = async () => {
       try {
@@ -24,21 +24,28 @@ const Analytics = () => {
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 60000);
+    const interval = setInterval(fetchData, 5000); // Poll every 5s for live updates
 
     return () => clearInterval(interval);
   }, []);
 
   // Calculate aggregate metrics
+  // Calculate aggregate metrics
   const totalFields = fields.length;
+
+  const safeNum = (v) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+
   const avgNDVI = fields.length > 0 
-    ? (fields.reduce((sum, f) => sum + f.avg_ndvi, 0) / fields.length).toFixed(3)
+    ? (fields.reduce((sum, f) => sum + safeNum(f.avgNdvi || f.avg_ndvi), 0) / fields.length).toFixed(3)
     : "0.000";
   const avgHealth = fields.length > 0
-    ? (fields.reduce((sum, f) => sum + f.avg_health, 0) / fields.length * 100).toFixed(1)
+    ? (fields.reduce((sum, f) => sum + safeNum(f.avgHealth || f.avg_health), 0) / fields.length * 100).toFixed(1)
     : "0.0";
   const avgYield = fields.length > 0
-    ? (fields.reduce((sum, f) => sum + f.avg_yield, 0) / fields.length).toFixed(2)
+    ? (fields.reduce((sum, f) => sum + safeNum(f.avgYield || f.avg_yield), 0) / fields.length).toFixed(2)
     : "0.00";
 
   if (loading) {
@@ -193,8 +200,8 @@ const Analytics = () => {
             <div className="p-6 max-h-[500px] overflow-y-auto bg-white">
               {fields.length > 0 ? (
                 <div className="space-y-3">
-                  {fields.map(field => (
-                    <LiveAlerts key={field.field_id} fieldId={field.field_id} />
+                  {fields.map((field, idx) => (
+                    <LiveAlerts key={field.fieldId || field.field_id || idx} fieldId={field.fieldId || field.field_id} />
                   ))}
                 </div>
               ) : (

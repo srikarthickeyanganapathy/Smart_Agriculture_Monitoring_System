@@ -10,6 +10,10 @@ export default function PixelFieldView({ field, onAdjust, onClose }) {
   const [selectedPlant, setSelectedPlant] = useState(null);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const { alertsMap } = useAlerts();
+  const safeNum = (v) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
 
   if (!field) {
     return (
@@ -19,14 +23,15 @@ export default function PixelFieldView({ field, onAdjust, onClose }) {
     );
   }
 
-  const fieldAlerts = alertsMap[String(field?.field_id)] || {};
+  const fieldAlerts = alertsMap[String(field?.fieldId || field?.field_id)] || {};
   const alertCount = Object.keys(fieldAlerts).length;
 
   const onPixelClick = (plant) => setSelectedPlant(plant);
 
   const handleFix = async () => {
-    if (onAdjust) await onAdjust(field.field_id);
-    else await adjustField(field.field_id);
+    const id = field.fieldId || field.field_id;
+    if (onAdjust) await onAdjust(id);
+    else await adjustField(id);
     setAlertsOpen(false);
   };
 
@@ -38,10 +43,10 @@ export default function PixelFieldView({ field, onAdjust, onClose }) {
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-3">
               <h2 className="text-2xl font-semibold text-gray-900 tracking-tight">
-                Field {field.field_id}
+                Field {field.fieldId || field.field_id}
               </h2>
               <span className="text-sm font-medium text-gray-500 px-3 py-1 bg-white rounded-full border border-gray-200">
-                {field.crop_type}
+                {field.cropType || field.crop_type || "Crop"}
               </span>
             </div>
             
@@ -49,17 +54,17 @@ export default function PixelFieldView({ field, onAdjust, onClose }) {
             <div className="flex gap-6 mt-4">
               <div className="flex flex-col">
                 <span className="text-xs font-medium text-gray-500 mb-1">Average NDVI</span>
-                <span className="text-lg font-semibold text-green-600">{field.avg_ndvi.toFixed(3)}</span>
+                <span className="text-lg font-semibold text-green-600">{safeNum(field.avgNdvi || field.avg_ndvi).toFixed(3)}</span>
               </div>
               <div className="w-px bg-gray-200"></div>
               <div className="flex flex-col">
                 <span className="text-xs font-medium text-gray-500 mb-1">Health Score</span>
-                <span className="text-lg font-semibold text-green-600">{(field.avg_health*100).toFixed(1)}%</span>
+                <span className="text-lg font-semibold text-green-600">{(safeNum(field.avgHealth || field.avg_health) * 100).toFixed(1)}%</span>
               </div>
               <div className="w-px bg-gray-200"></div>
               <div className="flex flex-col">
                 <span className="text-xs font-medium text-gray-500 mb-1">Avg Yield</span>
-                <span className="text-lg font-semibold text-green-600">{field.avg_yield.toFixed(2)}</span>
+                <span className="text-lg font-semibold text-green-600">{safeNum(field.avgYield || field.avg_yield).toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -87,7 +92,7 @@ export default function PixelFieldView({ field, onAdjust, onClose }) {
           <h3 className="text-sm font-semibold text-gray-900 mb-4 tracking-tight">Field Visualization</h3>
           <div className="inline-block bg-gray-50 rounded-xl p-6 border border-gray-200/60">
             <div className="grid grid-cols-10 gap-1.5 w-[500px] h-[500px]">
-              {field.plants.map((p, i) => {
+              {(field.plants || []).map((p, i) => {
                 const ndvi = p.ndvi ?? 0;
                 const color = rainbowColor(ndvi, -1, 1);
                 return (

@@ -1,22 +1,11 @@
-# python-ml-service/main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers.simulate_router import router as simulate_router, sim as simulation_instance
-from routers.yield_router import router as yield_router
-from routers.crop_router import router as crop_router
-from routers.disease_router import router as disease_router
-from routers.health_router import router as health_router
-from routers.dashboard_router import router as dashboard_router, set_simulation_ref
+from routers import simulate_router, disease_router, yield_router, health_router
 
 app = FastAPI(title="Smart Agriculture ML Service")
 
-origins = [
-    "http://localhost:3000",
-    "http://localhost:8080",
-    "http://localhost:5001",
-    "http://localhost:5002",
-    "*"
-]
+# CORS
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -26,31 +15,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Set simulation reference for dashboard router
-set_simulation_ref(simulation_instance)
-
-# Include all routers
-app.include_router(simulate_router, prefix="/simulate")
-app.include_router(yield_router, prefix="/predict")
-app.include_router(crop_router, prefix="/predict")
-app.include_router(disease_router, prefix="/predict")
-app.include_router(health_router, prefix="/predict")
-app.include_router(dashboard_router, prefix="/dashboard")
-
+# Include Routers
+app.include_router(simulate_router.router, prefix="/simulate", tags=["Simulation"])
+app.include_router(disease_router.router, prefix="/predict", tags=["Disease"])
+app.include_router(yield_router.router, prefix="/predict", tags=["Yield"])
+app.include_router(health_router.router, prefix="/health", tags=["Health"])
 
 @app.get("/")
 def root():
-    return {"status": "Python ML Service Running", "version": "2.0"}
-
-@app.get("/health")
-def health_check():
-    return {
-        "status": "healthy",
-        "services": {
-            "yield_prediction": "active",
-            "disease_prediction": "active",
-            "crop_recommendation": "active",
-            "simulation": "active",
-            "dashboard": "active"
-        }
-    }
+    return {"status": "Stateless ML Service Running", "version": "3.0"}

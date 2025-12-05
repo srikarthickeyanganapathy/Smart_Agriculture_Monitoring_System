@@ -17,7 +17,10 @@ export default function FieldView() {
     try {
       const json = await getAllFields();
       const fields = json.fields || [];
-      const found = fields.find(f => Number(f.field_id) === Number(id));
+      // Robust find: check snake_case and camelCase
+      const found = fields.find(f => 
+        Number(f.field_id || f.fieldId) === Number(id)
+      );
     
       if (!found) {
         // redirect back

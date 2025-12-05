@@ -9,17 +9,22 @@ import React from "react";
  */
 const DashboardCards = ({ fields = [], loading = false }) => {
   const totalFields = fields.length;
+  const safeNum = (v) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+
   const avgNDVI = totalFields
-    ? (fields.reduce((sum, f) => sum + Number(f.avg_ndvi || 0), 0) / totalFields)
+    ? (fields.reduce((sum, f) => sum + safeNum(f.avgNdvi || f.avg_ndvi), 0) / totalFields)
     : 0;
   const avgHealth = totalFields
-    ? (fields.reduce((sum, f) => sum + Number(f.avg_health || 0), 0) / totalFields)
+    ? (fields.reduce((sum, f) => sum + safeNum(f.avgHealth || f.avg_health), 0) / totalFields)
     : 0;
   const avgYield = totalFields
-    ? (fields.reduce((sum, f) => sum + Number(f.avg_yield || 0), 0) / totalFields)
+    ? (fields.reduce((sum, f) => sum + safeNum(f.avgYield || f.avg_yield), 0) / totalFields)
     : 0;
 
-  const formatNumber = (num, decimals = 2) => Number(num).toFixed(decimals);
+  const formatNumber = (num, decimals = 2) => safeNum(num).toFixed(decimals);
 
   const cards = [
     {

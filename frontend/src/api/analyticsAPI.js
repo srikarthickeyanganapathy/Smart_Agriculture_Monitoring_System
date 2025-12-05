@@ -3,14 +3,34 @@ import http from "./httpClient";
 // Start the digital twin simulation
 export const startSimulation = () => http.get("/analytics/start");
 
-// Fetch all fields with plant data
-export const fetchFieldSimulation = () => http.get("/analytics/fields");
+// Helper to parse backend data (handles raw data object)
+const processFieldsPayload = (data) => {
+    if (data && data.fields) {
+        data.fields = data.fields.map(f => ({
+            ...f,
+            plants: typeof f.plantsJson === 'string' ? JSON.parse(f.plantsJson) : (f.plants || [])
+        }));
+    }
+    return data;
+};
 
-// Get all fields (returns data directly)
-export const getAllFields = () => http.get("/analytics/fields").then(r => r.data);
+// Fetch all fields (returns Axios response for Analytics.jsx)
+export const fetchFieldSimulation = () => http.get("/analytics/fields").then(res => {
+    res.data = processFieldsPayload(res.data);
+    return res;
+});
 
-// Get single field by ID
-export const getFieldById = (id) => http.get(`/analytics/fields/${id}`).then(r => r.data);
+// Get all fields (returns data directly for FieldView.jsx)
+export const getAllFields = () => http.get("/analytics/fields").then(r => processFieldsPayload(r.data));
+
+// Get single field by ID (parses plantsJson if single object has it)
+export const getFieldById = (id) => http.get(`/analytics/fields/${id}`).then(r => {
+    const f = r.data;
+    if (f) {
+        f.plants = typeof f.plantsJson === 'string' ? JSON.parse(f.plantsJson) : (f.plants || []);
+    }
+    return f;
+});
 
 // Apply automated fix to a field
 export const adjustField = (fieldId) => http.post("/analytics/adjust", { fieldId }).then(r => r.data);
