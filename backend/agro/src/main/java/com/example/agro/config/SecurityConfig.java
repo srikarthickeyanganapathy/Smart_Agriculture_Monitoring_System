@@ -34,7 +34,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(req -> {
                     var config = new CorsConfiguration();
-                    config.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000", "http://localhost:8001"));
+                    config.setAllowedOrigins(
+                            List.of("http://localhost:5173", "http://localhost:3000", "http://localhost:8001"));
                     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     config.setAllowedHeaders(List.of("*"));
                     config.setAllowCredentials(true);
@@ -42,16 +43,13 @@ public class SecurityConfig {
                 }))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/v1/analytics/alerts").permitAll()
-                        .requestMatchers("/api/v1/analytics/alerts/push").permitAll()
-                        .requestMatchers("/api/v1/analytics/alerts/clear").permitAll()
+                        .requestMatchers("/api/v1/analytics/alerts/sse").authenticated() // Explicitly secure SSE
                         .anyRequest().authenticated())
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authProvider())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
-
 
     @Bean
     public DaoAuthenticationProvider authProvider() {

@@ -29,6 +29,7 @@ public class FieldAnalyticsService {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public List<Map<String, Object>> getFields() {
         try {
             Map<String, Object> res = pythonWebClient.get()
@@ -37,7 +38,8 @@ public class FieldAnalyticsService {
                     .bodyToMono(Map.class)
                     .block();
             // res expected to be {"status":"ok","fields":[...]}
-            if (res == null) return List.of();
+            if (res == null)
+                return List.of();
             Object fields = res.get("fields");
             if (fields instanceof List) {
                 return (List<Map<String, Object>>) fields;
@@ -48,16 +50,30 @@ public class FieldAnalyticsService {
         }
     }
 
+    public Map<String, Object> getField(int id) {
+        List<Map<String, Object>> all = getFields();
+        for (Map<String, Object> f : all) {
+            Object fidObj = f.get("field_id");
+            if (fidObj == null)
+                fidObj = f.get("id"); // fallback
+
+            if (fidObj instanceof Number && ((Number) fidObj).intValue() == id) {
+                return f;
+            }
+        }
+        return null;
+    }
+
     public Map<String, Object> adjustField(int fieldId) {
         try {
-            Map<String,Object> payload = Map.of("fieldId", fieldId);
+            Map<String, Object> payload = Map.of("fieldId", fieldId);
             Map resp = pythonWebClient.post()
                     .uri("/simulate/adjust")
                     .bodyValue(payload)
                     .retrieve()
                     .bodyToMono(Map.class)
                     .block();
-            return resp;
+            return (Map<String, Object>) resp;
         } catch (Exception e) {
             return Map.of("status", "error", "message", e.getMessage());
         }
@@ -67,6 +83,4 @@ public class FieldAnalyticsService {
         adjustField(fieldId);
         alertService.clearAlertsForField(fieldId); // backend clears once
     }
-
-
 }

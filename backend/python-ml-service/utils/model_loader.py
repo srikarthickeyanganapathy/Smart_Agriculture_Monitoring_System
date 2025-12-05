@@ -12,3 +12,15 @@ def load_yield_model():
     scaler = joblib.load(scaler_path)
 
     return model, scaler
+
+def load_disease_model():
+    """Load the trained disease prediction model (Random Forest)"""
+    model_path = os.path.join(BASE_DIR, "models/disease_model.pkl")
+    model_data = joblib.load(model_path)
+    return model_data['model'], model_data['feature_cols'], model_data['classes']
+
+def load_crop_model():
+    """Load the trained crop recommendation model (Random Forest)"""
+    model_path = os.path.join(BASE_DIR, "models/crop_model.pkl")
+    model_data = joblib.load(model_path)
+    return model_data['model'], model_data['label_encoder'], model_data['feature_cols'], model_data['crop_types']

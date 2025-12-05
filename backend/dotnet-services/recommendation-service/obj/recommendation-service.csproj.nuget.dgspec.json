@@ -47,6 +47,10 @@
               "target": "Package",
               "version": "[8.0.22, )"
             },
+            "Microsoft.ML.FastTree": {
+              "target": "Package",
+              "version": "[5.0.0, )"
+            },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
               "version": "[10.0.1, )"

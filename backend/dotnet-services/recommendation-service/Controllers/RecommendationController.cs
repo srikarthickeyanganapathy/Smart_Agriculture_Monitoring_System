@@ -5,7 +5,7 @@ using SmartAgri.Recommendation.Services;
 namespace SmartAgri.Recommendation.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/recommend")]
     public class RecommendController : ControllerBase
     {
         private readonly IRecommendationEngine _engine;
@@ -15,7 +15,7 @@ namespace SmartAgri.Recommendation.Controllers
             _engine = engine;
         }
 
-        [HttpPost]
+        [HttpPost("crop")]
         public ActionResult<RecommendationResult> Post([FromBody] RecommendationRequest req)
         {
             // req.DatasetUrl may be "/mnt/data/enhanced_agri_dataset.csv"

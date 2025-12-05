@@ -244,7 +244,10 @@ const Analytics = () => {
                     <p className="text-sm text-gray-700 leading-relaxed">
                       Weather forecast shows optimal conditions for irrigation in the next 48 hours. Consider scheduling irrigation for Fields 2 and 4 to maximize crop yield efficiency.
                     </p>
-                    <button className="mt-4 text-green-600 hover:text-green-700 font-semibold text-sm flex items-center gap-1 transition-colors">
+                    <button 
+                      onClick={() => window.location.href = '/recommendations/crop'}
+                      className="mt-4 text-green-600 hover:text-green-700 font-semibold text-sm flex items-center gap-1 transition-colors"
+                    >
                       Learn more
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

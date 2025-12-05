@@ -27,32 +27,26 @@ public class AlertsController {
         return alertService.createEmitter();
     }
 
-    // POST endpoint used by Python to push alerts
-    // Keep path simple: /alerts
-    @PostMapping("/alerts")
-    public Map<String, Object> receiveAlert(@RequestBody AlertDto alert) {
-        boolean accepted = alertService.storeAndPublish(alert);
-        if (!accepted) return Map.of("status", "ignored_cooldown");
-        return Map.of("status", "ok");
-    }
-
-    // Alias for "push" (optional)
-    @PostMapping("/alerts/push")
-    public Map<String, Object> receiveAlertPush(@RequestBody AlertDto alert) {
-        return receiveAlert(alert);
-    }
+    // POST endpoints for pushing alerts removed as AlertService now generates them
+    // internally by polling.
 
     // Clear alerts for a field (called by frontend when user clicks Fix)
     @PostMapping("/alerts/clear")
     public Map<String, Object> clearAlerts(@RequestBody Map<String, Object> body) {
         Integer fieldId = null;
         Object v = body.get("fieldId");
-        if (v instanceof Integer) fieldId = (Integer) v;
-        else if (v instanceof Number) fieldId = ((Number) v).intValue();
+        if (v instanceof Integer)
+            fieldId = (Integer) v;
+        else if (v instanceof Number)
+            fieldId = ((Number) v).intValue();
         else if (v instanceof String) {
-            try { fieldId = Integer.parseInt((String)v); } catch (Exception ignored) {}
+            try {
+                fieldId = Integer.parseInt((String) v);
+            } catch (Exception ignored) {
+            }
         }
-        if (fieldId == null) return Map.of("status", "error", "message", "fieldId required");
+        if (fieldId == null)
+            return Map.of("status", "error", "message", "fieldId required");
         alertService.clearAlertsForField(fieldId);
         return Map.of("status", "cleared", "fieldId", fieldId);
     }

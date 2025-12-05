@@ -1,81 +1,99 @@
-using SmartAgri.Recommendation.Models;
+using global::Microsoft.ML;
+using global::Microsoft.ML.Data;
+using global::SmartAgri.Recommendation.Models;
 using System;
+using System.Linq;
+using System.IO;
+using System.Collections.Generic;
 
 namespace SmartAgri.Recommendation.Services
 {
-    // Simple rule-based recommendation engine (can be replaced with ML later)
     public class RecommendationEngine : IRecommendationEngine
     {
-        public RecommendationResult GenerateRecommendation(RecommendationRequest req)
+        private readonly string _modelPath;
+        private readonly MLContext _mlContext;
+        private PredictionEngine<ModelInput, ModelOutput> _predEngine;
+        private readonly object _lock = new object();
+
+        public RecommendationEngine()
         {
-            var soil = req.Soil ?? new SoilData();
-            var crop = req.Crop?.ToLower() ?? "unknown";
-
-            // Basic rules:
-            // - If Nitrogen low (<40) -> add N recommendation
-            // - If P low (<15) -> add P recommendation
-            // - If K low (<100) -> add K recommendation
-            // Scale fertilizer recommendation by field area if provided.
-
-            double areaHectares = req.AreaHectares > 0 ? req.AreaHectares : 1.0;
-
-            var rec = new RecommendationResult {
-                Crop = crop,
-                Recommendations = new System.Collections.Generic.List<string>(),
-                DatasetUrlUsed = req.DatasetUrl
-            };
-
-            if (soil.SoilN < 40) {
-                double kgN = Math.Round(20 * areaHectares, 1);
-                rec.Recommendations.Add($"Apply {kgN} kg N/ha (Urea) — to address N deficiency (Soil_N={soil.SoilN:F1})");
-            } else {
-                rec.Recommendations.Add("No nitrogen supplement recommended.");
-            }
-
-            if (soil.SoilP < 15) {
-                double kgP2O5 = Math.Round(10 * areaHectares, 1);
-                rec.Recommendations.Add($"Apply {kgP2O5} kg P2O5/ha (Single Super Phosphate) (Soil_P={soil.SoilP:F1})");
-            } else {
-                rec.Recommendations.Add("Phosphorus levels adequate.");
-            }
-
-            if (soil.SoilK < 120) {
-                double kgK2O = Math.Round(25 * areaHectares, 1);
-                rec.Recommendations.Add($"Apply {kgK2O} kg K2O/ha (MOP) (Soil_K={soil.SoilK:F1})");
-            } else {
-                rec.Recommendations.Add("Potassium levels adequate.");
-            }
-
-            // pH adjustment suggestion
-            if (soil.SoilPH < 5.8) {
-                rec.Recommendations.Add("Soil acidic: consider lime application to raise pH.");
-            } else if (soil.SoilPH > 7.8) {
-                rec.Recommendations.Add("Soil alkaline: consider sulfur-based amendments.");
-            } else {
-                rec.Recommendations.Add("Soil pH within acceptable range.");
-            }
-
-            // Add simple irrigation / fertilizer schedule hint
-            if (req.Rainfall < 100) {
-                rec.Recommendations.Add("Low rainfall expected — schedule irrigation and split fertilizer applications.");
-            }
-
-            // Add a computed score
-            rec.ConfidenceScore = ComputeConfidenceScore(soil);
-
-            return rec;
+            _mlContext = new MLContext(seed: 0);
+            _modelPath = Path.Combine(AppContext.BaseDirectory, "crop_model.zip");
+            
+            // Lazy load or Train if missing
+            EnsureModelExists();
+            LoadModel();
         }
 
-        private double ComputeConfidenceScore(SoilData soil)
+        private void EnsureModelExists()
         {
-            // simple normalized score 0-1 based on how many nutrients in ideal range
-            int score = 0;
-            if (soil.SoilN >= 40 && soil.SoilN <= 80) score++;
-            if (soil.SoilP >= 15 && soil.SoilP <= 40) score++;
-            if (soil.SoilK >= 120 && soil.SoilK <= 300) score++;
-            if (soil.SoilPH >= 5.8 && soil.SoilPH <= 7.5) score++;
+            if (!File.Exists(_modelPath))
+            {
+                var trainer = new ModelTrainer(_modelPath);
+                trainer.TrainAndSaveModel();
+            }
+        }
 
-            return Math.Round(score / 4.0, 2);
+        private void LoadModel()
+        {
+            ITransformer loadedModel = _mlContext.Model.Load(_modelPath, out var modelInputSchema);
+            _predEngine = _mlContext.Model.CreatePredictionEngine<ModelInput, ModelOutput>(loadedModel);
+        }
+
+        public RecommendationResult GenerateRecommendation(RecommendationRequest req)
+        {
+            // Prepare Input
+            var input = new ModelInput
+            {
+                SoilN = (float)req.Nitrogen,
+                SoilP = (float)req.Phosphorus,
+                SoilK = (float)req.Potassium,
+                PH = (float)req.Ph,
+                Temperature = (float)req.Temperature,
+                Moisture = (float)req.Moisture,
+                Rainfall = (float)req.Rainfall
+            };
+
+            // Predict
+            ModelOutput prediction;
+            lock (_lock) // PredictionEngine is not thread-safe
+            {
+                prediction = _predEngine.Predict(input);
+            }
+
+            // Map scores to crops
+            // We need to know the label mapping. 
+            // The mapping is internally stored, but for standard multiclass, scores correspond to the label keys.
+            // For a simpler UX, we will return the Top Prediction + basic confidence.
+            // Advanced ML.NET usage allows extracting the slot names (labels) for the score array.
+            
+            // Extracting labels from the schema to map scores
+            var labelBuffer = new VBuffer<ReadOnlyMemory<char>>();
+            _predEngine.OutputSchema["Score"].Annotations.GetValue("SlotNames", ref labelBuffer);
+            var labels = labelBuffer.DenseValues().Select(l => l.ToString()).ToArray();
+
+            var cropScores = new List<CropScore>();
+            for (int i = 0; i < labels.Length; i++)
+            {
+                // Safety check
+                if (i < prediction.Score.Length)
+                {
+                    cropScores.Add(new CropScore 
+                    { 
+                        Crop = labels[i], 
+                        Score = Math.Round(prediction.Score[i], 2) 
+                    });
+                }
+            }
+
+            // Sort descending
+            cropScores.Sort((a, b) => b.Score.CompareTo(a.Score));
+
+            return new RecommendationResult
+            {
+                RecommendedCrops = cropScores,
+                DatasetUrlUsed = "ML.NET Self-Trained Model"
+            };
         }
     }
 }

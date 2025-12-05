@@ -11,6 +11,7 @@ class Plant:
         self.disease_prob = float(np.random.beta(1.5, 20))
         self.health = 1.0 - self.disease_prob
         self.yield_prediction = None
+        self.disease_status = "healthy"  # healthy, at_risk, diseased
 
     def compute_ndvi(self, red_idx, nir_idx):
         red = float(self.spectral[red_idx])
@@ -28,6 +29,14 @@ class Plant:
 
         self.disease_prob = float(min(1.0, max(0.0, self.disease_prob + np.random.normal(0, 0.01))))
         self.health = 1.0 - self.disease_prob
+        
+        # Update disease status based on probability
+        if self.disease_prob < 0.3:
+            self.disease_status = "healthy"
+        elif self.disease_prob < 0.6:
+            self.disease_status = "at_risk"
+        else:
+            self.disease_status = "diseased"
 
     def to_dict(self):
         return {
@@ -35,6 +44,7 @@ class Plant:
             "ndvi": float(self.ndvi),
             "health": float(self.health),
             "disease_prob": float(self.disease_prob),
+            "disease_status": self.disease_status,
             "yield": None if self.yield_prediction is None else float(self.yield_prediction),
             "agro": self.agro
         }
@@ -51,6 +61,10 @@ class Field:
         self.avg_yield = 0.0
         self.disease_risk = 0.0
         self.last_updated = datetime.utcnow()
+        
+        # New fields for crop recommendation
+        self.recommended_crop = crop_type  # Default to current crop
+        self.crop_confidence = 0.0
 
     def compute_aggregates(self):
         ndvis = [p.ndvi for p in self.plants]
@@ -72,6 +86,8 @@ class Field:
             "avg_health": self.avg_health,
             "avg_yield": self.avg_yield,
             "disease_risk": self.disease_risk,
+            "recommended_crop": self.recommended_crop,
+            "crop_confidence": self.crop_confidence,
             "last_updated": self.last_updated.isoformat(),
             "plants_count": len(self.plants)
         }

@@ -1,7 +1,8 @@
 package com.example.agro.dto;
 
 public class CropRecommendationRequest {
-    public String crop;
+    public Integer fieldId;
+    // Soil params
     public double soil_n;
     public double soil_p;
     public double soil_k;
@@ -9,4 +10,8 @@ public class CropRecommendationRequest {
     public double rainfall;
     public double temperature;
     public double soil_moisture;
+
+    public Integer getFieldId() {
+        return fieldId;
+    }
 }
