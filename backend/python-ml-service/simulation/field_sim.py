@@ -2,7 +2,7 @@
 import pandas as pd
 import numpy as np
 from .plant_model import Plant, Field
-from utils.alert_publisher import send_alert # Still can be used if we want Python to push alerts, or better return them.
+
 # The user said "Python does NOT generate alerts. Spring Boot does." 
 # So we will remove direct alert publishing from here and let Spring handle it based on values.
 
@@ -58,6 +58,34 @@ class FieldProcessor:
             "Fertilizer": 0.0
         }
 
+    def force_ndvi_match(self, spec: np.array, target_ndvi: float):
+        """
+        Adjusts the spectral array so that (NIR - Red) / (NIR + Red) approx equals target_ndvi.
+        This ensures continuity when we regenerate spectral data from stored NDVI.
+        """
+        # Clamp target to avoid division by zero
+        t_ndvi = max(-0.95, min(0.95, target_ndvi))
+        
+        red_val = spec[self.red_idx]
+        nir_val = spec[self.nir_idx]
+        
+        # Current average brightness of these two bands
+        avg_kn = (red_val + nir_val) / 2.0
+        if avg_kn < 0.01: avg_kn = 0.5 # Safety for dark pixels
+        
+        # We want: (NIR - RED) / (NIR + RED) = T
+        # Let NIR + RED = 2 * avg_kn (preserve brightness)
+        # Then NIR - RED = T * 2 * avg_kn
+        # Solving for NIR and RED:
+        # NIR = avg_kn * (1 + T)
+        # RED = avg_kn * (1 - T)
+        
+        new_nir = avg_kn * (1.0 + t_ndvi)
+        new_red = avg_kn * (1.0 - t_ndvi)
+        
+        spec[self.red_idx] = new_red
+        spec[self.nir_idx] = new_nir
+
     def generate_initial_state(self, n_fields=5, plants_per_field=100) -> list:
         """GET /simulate/init uses this"""
         fields = []
@@ -79,7 +107,7 @@ class FieldProcessor:
             
         return fields
 
-    def process_step(self, fields_state: list, yield_model_func) -> list:
+    def process_step(self, fields_state: list, yield_model_func=None, disease_model_func=None) -> tuple:
         """
         POST /simulate/step uses this.
         Takes current state -> Perturbs -> Predicts -> Returns next state.
@@ -105,8 +133,17 @@ class FieldProcessor:
                     # Ensure spectral exists (if not, resample)
                     spec = self.sample_spectral() 
                     
+                    # CONTINUITY FIX:
+                    # The input JSON has the 'ndvi' from the previous step.
+                    # Since we don't persist the full 131-band spectrum, we regenerate it (spec).
+                    # But the random 'spec' might have NDVI=0.2 while input was 0.8.
+                    # We must warp 'spec' so its NDVI matches the input.
+                    input_ndvi = float(p_data.get("ndvi", 0.0))
+                    self.force_ndvi_match(spec, input_ndvi)
+                    
                     p = Plant(p_data.get("plant_id", global_plant_id), spec, agro)
-                    p.ndvi = float(p_data.get("ndvi", 0.0))
+                    # Trust the input values initially
+                    p.ndvi = input_ndvi 
                     p.health = float(p_data.get("health", 1.0))
                     p.disease_prob = float(p_data.get("disease_prob", 0.0))
                     
@@ -156,22 +193,61 @@ class FieldProcessor:
                 p.perturb() # Change moisture, NPK, disease
                 p.compute_ndvi(self.red_idx, self.nir_idx) # Recalc NDVI
         
+
         # 3. Predict Yield (Batch)
         # Flatten all plants
         all_plants = [p for f in fields for p in f.plants]
-        if all_plants and yield_model_func:
-            spec_batch = np.stack([p.spectral for p in all_plants], axis=0)
-            spec_batch = spec_batch.reshape(spec_batch.shape[0], self.n_bands, 1)
+        if all_plants:
+             # Yield Prediction
+             if yield_model_func:
+                spec_batch = np.stack([p.spectral for p in all_plants], axis=0)
+                spec_batch = spec_batch.reshape(spec_batch.shape[0], self.n_bands, 1)
 
-            agro_keys = ["Soil_N", "Soil_P", "Soil_K", "Soil_pH", "Rainfall", "Temperature", "SoilMoisture"]
-            # Helper to get safe float
-            def get_val(d, k): return float(d.get(k, 0.0))
-            
-            agro_batch = np.array([[get_val(p.agro, k) for k in agro_keys] for p in all_plants], dtype=float)
-            
-            preds = yield_model_func(spec_batch, agro_batch)
-            for i, p in enumerate(all_plants):
-                 p.yield_prediction = float(preds[i])
+                agro_keys = ["Soil_N", "Soil_P", "Soil_K", "Soil_pH", "Rainfall", "Temperature", "SoilMoisture"]
+                def get_val(d, k): return float(d.get(k, 0.0))
+                
+                agro_batch = np.array([[get_val(p.agro, k) for k in agro_keys] for p in all_plants], dtype=float)
+                
+                preds = yield_model_func(spec_batch, agro_batch)
+                for i, p in enumerate(all_plants):
+                     p.yield_prediction = float(preds[i])
+
+             # Disease Prediction
+             if disease_model_func:
+                 # Construct DataFrame for disease model
+                 # Features must match training: NDVI, Soil_N, Soil_P, Soil_K, Soil_pH, Rainfall, Temperature, SoilMoisture
+                 d_data = []
+                 for p in all_plants:
+                     row = {
+                         "NDVI": p.ndvi,
+                         "Soil_N": p.agro.get("Soil_N", 0),
+                         "Soil_P": p.agro.get("Soil_P", 0),
+                         "Soil_K": p.agro.get("Soil_K", 0),
+                         "Soil_pH": p.agro.get("Soil_pH", 6.5),
+                         "Rainfall": p.agro.get("Rainfall", 0),
+                         "Temperature": p.agro.get("Temperature", 0),
+                         "SoilMoisture": p.agro.get("SoilMoisture", 0)
+                     }
+                     d_data.append(row)
+                 
+                 df_disease = pd.DataFrame(d_data)
+                 disease_results = disease_model_func(df_disease) # Returns list of (status, prob)
+                 
+                 for i, p in enumerate(all_plants):
+                     status, prob = disease_results[i]
+                     p.disease_status = status
+                     
+                     # CRITICAL FIX: Normalize 'disease_prob' to mean 'Risk of Disease'
+                     # The model returns CONFIDENCE. 
+                     # If confident 'healthy' (0.95), Risk should be (1 - 0.95) = 0.05
+                     # If confident 'diseased' (0.95), Risk should be 0.95
+                     if status == "healthy":
+                         p.disease_prob = max(0.0, 1.0 - prob)
+                     else:
+                         p.disease_prob = prob
+                     
+                     # Sync Health immediately
+                     p.health = 1.0 - p.disease_prob
 
         # 4. Final Aggregates
         results = []

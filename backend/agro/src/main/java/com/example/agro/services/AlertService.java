@@ -17,8 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import com.example.agro.dto.AlertDto;
-
 @Service
 public class AlertService {
 

@@ -2,38 +2,26 @@ using Microsoft.ML.Data;
 
 namespace SmartAgri.Recommendation.Models
 {
-    public class ModelInput
+    // Input Data Class
+    public class CropData
     {
-        [LoadColumn(0)]
-        public float SoilN { get; set; }
-
-        [LoadColumn(1)]
-        public float SoilP { get; set; }
-
-        [LoadColumn(2)]
-        public float SoilK { get; set; }
-
-        [LoadColumn(3)]
-        public float Temperature { get; set; }
-
-        [LoadColumn(4)]
-        public float Moisture { get; set; }
-
-        [LoadColumn(5)]
-        public float PH { get; set; }
-
-        [LoadColumn(6)]
-        public float Rainfall { get; set; }
-
-        [LoadColumn(7)]
-        public string Label { get; set; } // The Crop Name
+        [LoadColumn(0)] public float N { get; set; }
+        [LoadColumn(1)] public float P { get; set; }
+        [LoadColumn(2)] public float K { get; set; }
+        [LoadColumn(3)] public float Temperature { get; set; }
+        [LoadColumn(5)] public float Ph { get; set; }
+        [LoadColumn(6)] public float Rainfall { get; set; }
+        [LoadColumn(7)] public float SoilMoisture { get; set; }
+        [LoadColumn(8)] public string Label { get; set; }
     }
 
-    public class ModelOutput
+    // Output Prediction Class
+    public class CropPrediction
     {
         [ColumnName("PredictedLabel")]
-        public string Prediction { get; set; }
+        public string PredictedLabel { get; set; } // Changed from PredictedCrop to match user snippet
 
-        public float[] Score { get; set; }
+        [ColumnName("Score")]
+        public float[] Score { get; set; } // Confidence scores for all crops
     }
 }

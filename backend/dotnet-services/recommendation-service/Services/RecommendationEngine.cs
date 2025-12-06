@@ -12,7 +12,7 @@ namespace SmartAgri.Recommendation.Services
     {
         private readonly string _modelPath;
         private readonly MLContext _mlContext;
-        private PredictionEngine<ModelInput, ModelOutput> _predEngine;
+        private PredictionEngine<CropData, CropPrediction> _predEngine;
         private readonly object _lock = new object();
 
         public RecommendationEngine()
@@ -20,7 +20,6 @@ namespace SmartAgri.Recommendation.Services
             _mlContext = new MLContext(seed: 0);
             _modelPath = Path.Combine(AppContext.BaseDirectory, "crop_model.zip");
             
-            // Lazy load or Train if missing
             EnsureModelExists();
             LoadModel();
         }
@@ -37,63 +36,93 @@ namespace SmartAgri.Recommendation.Services
         private void LoadModel()
         {
             ITransformer loadedModel = _mlContext.Model.Load(_modelPath, out var modelInputSchema);
-            _predEngine = _mlContext.Model.CreatePredictionEngine<ModelInput, ModelOutput>(loadedModel);
+            _predEngine = _mlContext.Model.CreatePredictionEngine<CropData, CropPrediction>(loadedModel);
         }
 
         public RecommendationResult GenerateRecommendation(RecommendationRequest req)
         {
-            // Prepare Input
-            var input = new ModelInput
+            var warnings = new List<string>();
+
+            // Snippet Validations
+            if (req.Nitrogen < 0) warnings.Add("Nitrogen negative.");
+            if (req.Phosphorus < 0) warnings.Add("Phosphorus negative.");
+            if (req.Potassium < 0) warnings.Add("Potassium negative.");
+
+            // Create Input (No Humidity)
+            var input = new CropData
             {
-                SoilN = (float)req.Nitrogen,
-                SoilP = (float)req.Phosphorus,
-                SoilK = (float)req.Potassium,
-                PH = (float)req.Ph,
+                N = (float)req.Nitrogen,
+                P = (float)req.Phosphorus,
+                K = (float)req.Potassium,
                 Temperature = (float)req.Temperature,
-                Moisture = (float)req.Moisture,
-                Rainfall = (float)req.Rainfall
+                Ph = (float)req.Ph,
+                Rainfall = (float)req.Rainfall,
+                SoilMoisture = (float)req.SoilMoisture
             };
 
             // Predict
-            ModelOutput prediction;
-            lock (_lock) // PredictionEngine is not thread-safe
+            CropPrediction prediction;
+            lock (_lock) 
             {
-                prediction = _predEngine.Predict(input);
+                 prediction = _predEngine.Predict(input);
             }
 
-            // Map scores to crops
-            // We need to know the label mapping. 
-            // The mapping is internally stored, but for standard multiclass, scores correspond to the label keys.
-            // For a simpler UX, we will return the Top Prediction + basic confidence.
-            // Advanced ML.NET usage allows extracting the slot names (labels) for the score array.
-            
-            // Extracting labels from the schema to map scores
+            // Softmax & TopK
+            var probs = Softmax(prediction.Score);
+            var topK = GetTopK(prediction.Score, probs, 10); 
+
+            // Populate Result
+             var cropScores = topK.Select(t => new CropScore 
+            { 
+                Crop = t.Label, 
+                Score = Math.Round(t.Probability, 4) 
+            }).ToList();
+
+            var best = cropScores.FirstOrDefault();
+
+            return new RecommendationResult
+            {
+                Status = "ok",
+                RecommendedCrop = best?.Crop ?? "unknown",
+                Confidence = best?.Score ?? 0.0,
+                Recommendations = cropScores,
+                DatasetUsed = "crop_recommendation_rebuilt (no humidity)",
+                Warnings = warnings
+            };
+        }
+
+        // Softmax implementation
+        private float[] Softmax(float[] scores)
+        {
+            if (scores == null || scores.Length == 0) return Array.Empty<float>();
+            var max = scores.Max();
+            var exps = scores.Select(s => Math.Exp(s - max)).ToArray();
+            var sum = exps.Sum();
+            if (sum == 0) return exps.Select(e => 1f / exps.Length).ToArray(); // Stability fix
+            return exps.Select(e => (float)(e / sum)).ToArray();
+        }
+
+        // Return top-K predicted labels
+        private List<(string Label, float Probability)> GetTopK(float[] rawScores, float[] probs, int k)
+        {
+            // Extract feature labels from schema
             var labelBuffer = new VBuffer<ReadOnlyMemory<char>>();
             _predEngine.OutputSchema["Score"].Annotations.GetValue("SlotNames", ref labelBuffer);
             var labels = labelBuffer.DenseValues().Select(l => l.ToString()).ToArray();
 
-            var cropScores = new List<CropScore>();
-            for (int i = 0; i < labels.Length; i++)
+            int n = Math.Min(k, probs.Length);
+            // Index logic
+            var indexed = probs.Select((p, i) => (Index: i, Prob: p))
+                               .OrderByDescending(x => x.Prob)
+                               .Take(n);
+
+            var result = new List<(string, float)>();
+            foreach (var item in indexed)
             {
-                // Safety check
-                if (i < prediction.Score.Length)
-                {
-                    cropScores.Add(new CropScore 
-                    { 
-                        Crop = labels[i], 
-                        Score = Math.Round(prediction.Score[i], 2) 
-                    });
-                }
+                var label = (item.Index < labels.Length) ? labels[item.Index] : $"class_{item.Index}";
+                result.Add((label, item.Prob));
             }
-
-            // Sort descending
-            cropScores.Sort((a, b) => b.Score.CompareTo(a.Score));
-
-            return new RecommendationResult
-            {
-                RecommendedCrops = cropScores,
-                DatasetUrlUsed = "ML.NET Self-Trained Model"
-            };
+            return result;
         }
     }
 }

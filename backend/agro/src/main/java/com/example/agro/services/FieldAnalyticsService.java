@@ -25,6 +25,9 @@ public class FieldAnalyticsService {
 
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
 
+    // Track last alert time per field to throttle alerts (2.5 mins)
+    private final java.util.concurrent.ConcurrentMap<Integer, Long> lastAlertTime = new java.util.concurrent.ConcurrentHashMap<>();
+
     public FieldHistory simulateStep(int fieldId) {
         // 1. Fetch Last State
         FieldHistory last = fieldHistoryRepository.findTopByFieldIdOrderBySnapshotTimeDesc(fieldId);
@@ -32,9 +35,15 @@ public class FieldAnalyticsService {
         // Prepare Payload Single Field
         java.util.Map<String, Object> fieldData = new java.util.HashMap<>();
         fieldData.put("field_id", fieldId);
-        fieldData.put("crop_type", "corn");
+        String currentCrop = "corn";
 
         if (last != null) {
+            if (last.getCropName() != null && !last.getCropName().isEmpty()) {
+                currentCrop = last.getCropName();
+            }
+            // Use the determined crop
+            fieldData.put("crop_type", currentCrop);
+
             fieldData.put("nitrogen", last.getNitrogen());
             fieldData.put("phosphorus", last.getPhosphorus());
             fieldData.put("potassium", last.getPotassium());
@@ -45,6 +54,10 @@ public class FieldAnalyticsService {
             // Send both keys to be safe
             fieldData.put("ndvi", last.getAvgNdvi());
             fieldData.put("avg_ndvi", last.getAvgNdvi());
+
+            // Send previous yield and health so model can increment them
+            fieldData.put("avg_yield", last.getAvgYield());
+            fieldData.put("avg_health", last.getAvgHealth());
 
             // Critical: Send plants state to Python
             if (last.getPlantsJson() != null && !last.getPlantsJson().isEmpty()) {
@@ -59,6 +72,7 @@ public class FieldAnalyticsService {
             }
         } else {
             fieldData.put("plants", new java.util.ArrayList<>());
+            fieldData.put("crop_type", "corn");
         }
 
         // Wrapper
@@ -102,6 +116,12 @@ public class FieldAnalyticsService {
                     newState.setAvgYield(toDouble(resp.getOrDefault("avg_yield", resp.get("yield"))));
                     newState.setAvgHealth(toDouble(resp.getOrDefault("avg_health", resp.get("health"))));
 
+                    // Capture crop name calling it "crop" or "crop_type" in python
+                    String cName = (String) resp.getOrDefault("crop", resp.getOrDefault("crop_type", "Corn"));
+                    if (cName == null)
+                        cName = "Corn";
+                    newState.setCropName(cName);
+
                     if (resp.containsKey("plants")) {
                         try {
                             String plantsJson = objectMapper.writeValueAsString(resp.get("plants"));
@@ -115,30 +135,46 @@ public class FieldAnalyticsService {
 
                     // 4. Process Alerts (from Root Response)
                     if (rootResp.containsKey("alerts")) {
-                        Object alertsObj = rootResp.get("alerts");
-                        if (alertsObj instanceof java.util.List) {
-                            java.util.List<java.util.Map<String, Object>> alerts = (java.util.List<java.util.Map<String, Object>>) alertsObj;
-                            for (java.util.Map<String, Object> alertData : alerts) {
-                                try {
-                                    // Filter alerts for this specific field if multiple are returned
-                                    int alertFieldId = -1;
-                                    if (alertData.containsKey("field_id")) {
-                                        alertFieldId = ((Number) alertData.get("field_id")).intValue();
-                                    }
+                        // Throttling: Only process alerts every 2.5 mins (150,000 ms)
+                        long now = System.currentTimeMillis();
+                        long lastTime = lastAlertTime.getOrDefault(fieldId, 0L);
 
-                                    if (alertFieldId == fieldId) {
-                                        com.example.agro.Models.Alert alert = new com.example.agro.Models.Alert();
-                                        alert.setFieldId(fieldId);
-                                        alert.setType((String) alertData.get("type"));
-                                        alert.setMessage((String) alertData.get("message"));
-                                        alert.setSeverity((String) alertData.getOrDefault("level", "MEDIUM"));
-                                        alert.setTimestamp(LocalDateTime.now());
-                                        alert.setCleared(false);
-                                        alertRepository.save(alert);
+                        // Check if enough time has passed
+                        if (now - lastTime >= 150000) {
+                            Object alertsObj = rootResp.get("alerts");
+                            if (alertsObj instanceof java.util.List) {
+                                java.util.List<java.util.Map<String, Object>> alerts = (java.util.List<java.util.Map<String, Object>>) alertsObj;
+                                boolean alertProcessed = false;
+
+                                for (java.util.Map<String, Object> alertData : alerts) {
+                                    try {
+                                        // Filter alerts for this specific field if multiple are returned
+                                        int alertFieldId = -1;
+                                        if (alertData.containsKey("field_id")) {
+                                            alertFieldId = ((Number) alertData.get("field_id")).intValue();
+                                        }
+
+                                        if (alertFieldId == fieldId) {
+                                            com.example.agro.Models.Alert alert = new com.example.agro.Models.Alert();
+                                            alert.setFieldId(fieldId);
+                                            alert.setType((String) alertData.get("type"));
+                                            alert.setMessage((String) alertData.get("message"));
+                                            alert.setSeverity((String) alertData.getOrDefault("level", "MEDIUM"));
+                                            alert.setTimestamp(LocalDateTime.now());
+                                            alert.setCleared(false);
+                                            // Use AlertService to process (save + broadcast)
+                                            alertService.processAlert(alert);
+                                            alertProcessed = true;
+                                        }
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
                                     }
-                                } catch (Exception e) {
-                                    e.printStackTrace();
                                 }
+
+                                // Update time only if we actually processed alerts (or at least checked)
+                                // If we want to strictly enforce 2.5 min check regardless of whether alerts
+                                // existed or not:
+                                lastAlertTime.put(fieldId, now);
                             }
                         }
                     }
@@ -181,7 +217,7 @@ public class FieldAnalyticsService {
         alertService.clearAlertsForField(fieldId);
     }
 
-    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 10000)
+    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 5000)
     public void startSimulation() {
         // Run simulation step for all fields.
         java.util.List<Integer> ids = fieldHistoryRepository.findDistinctFieldIds();
@@ -213,6 +249,11 @@ public class FieldAnalyticsService {
                             newState.setAvgNdvi(toDouble(f.get("avg_ndvi")));
                             newState.setAvgYield(toDouble(f.get("avg_yield")));
                             newState.setAvgHealth(toDouble(f.get("avg_health")));
+
+                            String cName = (String) f.getOrDefault("crop", f.getOrDefault("crop_type", "Corn"));
+                            if (cName == null)
+                                cName = "Corn";
+                            newState.setCropName(cName);
 
                             if (f.containsKey("plants")) {
                                 newState.setPlantsJson(objectMapper.writeValueAsString(f.get("plants")));
@@ -256,6 +297,7 @@ public class FieldAnalyticsService {
                         map.put("avgNdvi", fh.getAvgNdvi());
                         map.put("avgYield", fh.getAvgYield());
                         map.put("avgHealth", fh.getAvgHealth());
+                        map.put("crop", fh.getCropName());
 
                         if (fh.getPlantsJson() != null && !fh.getPlantsJson().isEmpty()) {
                             map.put("plants", objectMapper.readValue(fh.getPlantsJson(), java.util.List.class));

@@ -1,84 +1,96 @@
-using Microsoft.ML;
-using SmartAgri.Recommendation.Models;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
+using Microsoft.ML;
+using Microsoft.ML.Trainers.LightGbm;
+using SmartAgri.Recommendation.Models;
 
 namespace SmartAgri.Recommendation.Services
 {
     public class ModelTrainer
     {
-        private readonly MLContext _mlContext;
         private readonly string _modelPath;
+        private readonly MLContext _mlContext;
 
         public ModelTrainer(string modelPath)
         {
-            _mlContext = new MLContext(seed: 0); // Seed for determinism
             _modelPath = modelPath;
+            _mlContext = new MLContext(seed: 42); // User prompt set seed 42
         }
 
         public void TrainAndSaveModel()
         {
-            if (File.Exists(_modelPath)) return; // Don't retrain if exists
+            // Path to the rebuilt dataset
+            string dataPath = @"C:\Users\SEC\OneDrive\Desktop\Project\Final Year Project\Smart_Agriculture_Monitoring_System\backend\dotnet-services\crop_recommendation_rebuilt.csv";
 
-            Console.WriteLine("Generating synthetic data and training ML model...");
+            Console.WriteLine("Loading and validating data...");
+            IDataView data = _mlContext.Data.LoadFromTextFile<CropData>(
+                path: dataPath, 
+                hasHeader: true, 
+                separatorChar: ',');
 
-            // 1. Generate Data
-            var data = GenerateSyntheticData();
-            var dataView = _mlContext.Data.LoadFromEnumerable(data);
+            // Remove rows with missing values (Label excluded from check if string)
+            // Humidity excluded from check as it is not in CropData
+            var cleaned = _mlContext.Data.FilterRowsByMissingValues(data, new[] { "N", "P", "K", "Temperature", "Ph", "Rainfall", "SoilMoisture" });
 
-            // 2. Define Pipeline
-            var pipeline = _mlContext.Transforms.Conversion.MapValueToKey("Label")
-                .Append(_mlContext.Transforms.Concatenate("Features", "SoilN", "SoilP", "SoilK", "Temperature", "Moisture", "PH", "Rainfall"))
-                .Append(_mlContext.MulticlassClassification.Trainers.SdcaMaximumEntropy("Label", "Features")) // Robust multi-class trainer
-                .Append(_mlContext.Transforms.Conversion.MapKeyToValue("PredictedLabel"));
+            // Split
+            var split = _mlContext.Data.TrainTestSplit(cleaned, testFraction: 0.2, seed: 42);
+            var trainData = split.TrainSet;
+            var testData = split.TestSet;
 
-            // 3. Train
-            var model = pipeline.Fit(dataView);
+            // Define Data Prep Pipeline (NO HUMIDITY)
+            var featureCols = new[] { "N", "P", "K", "Temperature", "Ph", "Rainfall", "SoilMoisture" };
+            var dataPrep = _mlContext.Transforms.Conversion.MapValueToKey("Label", "Label")
+                         .Append(_mlContext.Transforms.Concatenate("Features", featureCols));
 
-            // 4. Save
-            _mlContext.Model.Save(model, dataView.Schema, _modelPath);
-            Console.WriteLine($"Model saved to: {_modelPath}");
-        }
-
-        private IEnumerable<ModelInput> GenerateSyntheticData()
-        {
-            var data = new List<ModelInput>();
-            var random = new Random();
-            int samplesPerCrop = 200;
-
-            // Define ideal profiles (similar to the Expert System) but with wider ranges for robustness
-            var profiles = new[]
+            // Grid search candidates (Updated per snippet)
+            var grid = new List<Microsoft.ML.Trainers.LightGbm.LightGbmMulticlassTrainer.Options>
             {
-                // Note: User data shows high K (e.g. 264). We updated ranges to overlap this.
-                new { Crop="Wheat",     N=40, P=30, K=150, Temp=20, Moist=30, PH=6.5, Rain=75 },
-                new { Crop="Rice",      N=60, P=40, K=200, Temp=30, Moist=70, PH=6.0, Rain=200 },
-                new { Crop="Maize",     N=80, P=50, K=180, Temp=25, Moist=45, PH=6.5, Rain=90 },
-                new { Crop="Cotton",    N=50, P=30, K=220, Temp=32, Moist=35, PH=7.0, Rain=80 },
-                new { Crop="Sugarcane", N=100, P=60, K=250, Temp=28, Moist=60, PH=7.0, Rain=180 },
-                new { Crop="Barley",    N=30, P=20, K=100, Temp=15, Moist=25, PH=6.0, Rain=50 },
+                new Microsoft.ML.Trainers.LightGbm.LightGbmMulticlassTrainer.Options { NumberOfLeaves = 31, NumberOfIterations = 300, LearningRate = 0.1, MinimumExampleCountPerLeaf = 5, LabelColumnName="Label", FeatureColumnName="Features" },
+                new Microsoft.ML.Trainers.LightGbm.LightGbmMulticlassTrainer.Options { NumberOfLeaves = 31, NumberOfIterations = 400, LearningRate = 0.05, MinimumExampleCountPerLeaf = 5, LabelColumnName="Label", FeatureColumnName="Features" },
+                new Microsoft.ML.Trainers.LightGbm.LightGbmMulticlassTrainer.Options { NumberOfLeaves = 64, NumberOfIterations = 300, LearningRate = 0.05, MinimumExampleCountPerLeaf = 5, LabelColumnName="Label", FeatureColumnName="Features" }
             };
 
-            foreach (var p in profiles)
+            Console.WriteLine("Running cross-validation grid search (5 folds)...");
+            double bestScore = double.NegativeInfinity;
+            Microsoft.ML.Trainers.LightGbm.LightGbmMulticlassTrainer.Options bestOpt = null;
+
+            foreach (var opt in grid)
             {
-                for (int i = 0; i < samplesPerCrop; i++)
+                var trainer = _mlContext.MulticlassClassification.Trainers.LightGbm(opt);
+                var pipeline = dataPrep.Append(trainer).Append(_mlContext.Transforms.Conversion.MapKeyToValue("PredictedLabel"));
+                
+                var cvResults = _mlContext.MulticlassClassification.CrossValidate(trainData, pipeline, numberOfFolds: 5, labelColumnName: "Label");
+                var avgMicro = cvResults.Average(r => r.Metrics.MicroAccuracy);
+                
+                Console.WriteLine($"Option Leaves={opt.NumberOfLeaves}, Iters={opt.NumberOfIterations} => AvgMicro={avgMicro:F4}");
+                
+                if (avgMicro > bestScore)
                 {
-                    data.Add(new ModelInput
-                    {
-                        Label = p.Crop,
-                        SoilN = (float)(p.N + random.Next(-20, 20)),
-                        SoilP = (float)(p.P + random.Next(-15, 15)),
-                        SoilK = (float)(p.K + random.Next(-100, 100)), // Large variance for K
-                        Temperature = (float)(p.Temp + random.Next(-5, 5)),
-                        Moisture = (float)(p.Moist + random.Next(-15, 15)),
-                        PH = (float)(p.PH + random.NextDouble() * 2 - 1),
-                        Rainfall = (float)(p.Rain + random.Next(-40, 40))
-                    });
+                    bestScore = avgMicro;
+                    bestOpt = opt;
                 }
             }
 
-            return data;
+            if (bestOpt == null) throw new Exception("Grid search failed.");
+            Console.WriteLine($"Best Params: Leaves={bestOpt.NumberOfLeaves}, Iters={bestOpt.NumberOfIterations}");
+
+            // Train Final
+            var finalTrainer = _mlContext.MulticlassClassification.Trainers.LightGbm(bestOpt);
+            var finalPipeline = dataPrep.Append(finalTrainer).Append(_mlContext.Transforms.Conversion.MapKeyToValue("PredictedLabel"));
+
+            Console.WriteLine("Training final model...");
+            var model = finalPipeline.Fit(trainData);
+
+            // Evaluate
+            var transformedTest = model.Transform(testData);
+            var metrics = _mlContext.MulticlassClassification.Evaluate(transformedTest, labelColumnName: "Label", scoreColumnName: "Score");
+            Console.WriteLine($"Test Metrics: MicroAcc={metrics.MicroAccuracy:F4}, MacroAcc={metrics.MacroAccuracy:F4}");
+
+            // Save
+            _mlContext.Model.Save(model, trainData.Schema, _modelPath);
+            Console.WriteLine($"Model saved to {_modelPath}");
         }
     }
 }

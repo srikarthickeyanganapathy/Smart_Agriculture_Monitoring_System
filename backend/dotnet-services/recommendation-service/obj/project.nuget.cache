@@ -1,9 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "qP9hUNH1ofs=",
+  "dgSpecHash": "ywbF48mZUeE=",
   "success": true,
   "projectFilePath": "C:\\Users\\SEC\\OneDrive\\Desktop\\Project\\Final Year Project\\Smart_Agriculture_Monitoring_System\\backend\\dotnet-services\\recommendation-service\\recommendation-service.csproj",
   "expectedPackageFiles": [
+    "C:\\Users\\SEC\\.nuget\\packages\\lightgbm\\4.6.0\\lightgbm.4.6.0.nupkg.sha512",
     "C:\\Users\\SEC\\.nuget\\packages\\microsoft.aspnetcore.openapi\\8.0.22\\microsoft.aspnetcore.openapi.8.0.22.nupkg.sha512",
     "C:\\Users\\SEC\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\9.0.4\\microsoft.bcl.asyncinterfaces.9.0.4.nupkg.sha512",
     "C:\\Users\\SEC\\.nuget\\packages\\microsoft.extensions.apidescription.server\\8.0.0\\microsoft.extensions.apidescription.server.8.0.0.nupkg.sha512",
@@ -11,6 +12,7 @@
     "C:\\Users\\SEC\\.nuget\\packages\\microsoft.ml.cpumath\\5.0.0\\microsoft.ml.cpumath.5.0.0.nupkg.sha512",
     "C:\\Users\\SEC\\.nuget\\packages\\microsoft.ml.dataview\\5.0.0\\microsoft.ml.dataview.5.0.0.nupkg.sha512",
     "C:\\Users\\SEC\\.nuget\\packages\\microsoft.ml.fasttree\\5.0.0\\microsoft.ml.fasttree.5.0.0.nupkg.sha512",
+    "C:\\Users\\SEC\\.nuget\\packages\\microsoft.ml.lightgbm\\5.0.0\\microsoft.ml.lightgbm.5.0.0.nupkg.sha512",
     "C:\\Users\\SEC\\.nuget\\packages\\microsoft.openapi\\2.3.0\\microsoft.openapi.2.3.0.nupkg.sha512",
     "C:\\Users\\SEC\\.nuget\\packages\\newtonsoft.json\\13.0.3\\newtonsoft.json.13.0.3.nupkg.sha512",
     "C:\\Users\\SEC\\.nuget\\packages\\swashbuckle.aspnetcore\\10.0.1\\swashbuckle.aspnetcore.10.0.1.nupkg.sha512",

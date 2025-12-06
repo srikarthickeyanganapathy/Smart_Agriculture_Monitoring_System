@@ -51,6 +51,9 @@ public class FieldHistory {
     @Column(name = "plants_json", columnDefinition = "LONGTEXT")
     private String plantsJson;
 
+    @Column(name = "crop_name")
+    private String cropName;
+
     // Getters and Setters
     public Long getId() {
         return id;
@@ -62,6 +65,14 @@ public class FieldHistory {
 
     public void setPlantsJson(String plantsJson) {
         this.plantsJson = plantsJson;
+    }
+
+    public String getCropName() {
+        return cropName;
+    }
+
+    public void setCropName(String cropName) {
+        this.cropName = cropName;
     }
 
     public void setId(Long id) {

@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import NotificationBell from "./NotificationBell";
-import { rainbowColor } from "../utils/color.js";
+import { getNdviColor } from "../utils/color.js";
 
 export default function Heatmap5Fields({ fields }) {
   const navigate = useNavigate();
@@ -35,7 +35,7 @@ export default function Heatmap5Fields({ fields }) {
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
                   <div className="inline-block px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold uppercase tracking-wider rounded-full mb-3">
-                    {field.cropType || field.crop_type || "Crop"}
+                    {field.crop || field.cropType || field.crop_type || "Crop"}
                   </div>
                   <h3 className="text-2xl font-bold text-gray-900 mb-1">
                     Field {field.fieldId || field.field_id}
@@ -64,7 +64,7 @@ export default function Heatmap5Fields({ fields }) {
               <div className="grid grid-cols-10 gap-1 bg-white p-4 rounded-2xl shadow-inner border border-gray-200">
                 {plantsPreview.map((p, idx) => {
                   const ndvi = p.ndvi ?? 0;
-                  const color = rainbowColor(ndvi, -1, 1);
+                  const color = getNdviColor(ndvi);
                   return (
                     <div 
                       key={idx} 

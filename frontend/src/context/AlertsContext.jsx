@@ -5,14 +5,17 @@ const AlertsContext = createContext();
 
 export function AlertsProvider({ children }) {
   const [alertsMap, setAlertsMap] = useState({});
+  const [token, setToken] = useState(localStorage.getItem("token"));
 
   useEffect(() => {
+    if (!token) return; // Don't connect if not logged in
+
     let es;
     let reconnectDelay = 1000;
 
     const connect = () => {
-      const token = localStorage.getItem("token");
-      const url = token ? `${ALERTS_SSE_URL}?token=${token}` : ALERTS_SSE_URL;
+      // Token is already verified present by the early return, but we use the state value
+      const url = `${ALERTS_SSE_URL}?token=${token}`;
       es = new EventSource(url);
 
       es.onopen = () => {
@@ -36,7 +39,7 @@ export function AlertsProvider({ children }) {
       es.addEventListener("alert", (e) => {
         try {
           const payload = JSON.parse(e.data);
-          if (payload && payload.action === "cleared") {
+          if (payload && (payload.action === "cleared" || payload.cleared === true)) {
             setAlertsMap(prev => {
               const copy = { ...prev };
               delete copy[String(payload.fieldId)];
@@ -50,9 +53,17 @@ export function AlertsProvider({ children }) {
             setAlertsMap(prev => {
               const copy = { ...prev };
               if (!copy[fid]) copy[fid] = {};
+
+              // Normalize severity: Backend (HIGH, MEDIUM, LOW) -> Frontend (critical, warning, info)
+              let severity = payload.severity || payload.level || "info";
+              const s = severity.toUpperCase();
+              if (s === "HIGH" || s === "CRITICAL") severity = "critical";
+              else if (s === "MEDIUM" || s === "WARNING") severity = "warning";
+              else if (s === "LOW" || s === "INFO") severity = "info";
+
               copy[fid][payload.type] = {
                 message: payload.message,
-                level: payload.level,
+                level: severity,
                 timestamp: payload.timestamp
               };
               return copy;
@@ -67,15 +78,16 @@ export function AlertsProvider({ children }) {
         console.error("SSE error", err);
         try { es.close(); } catch (_) {}
         setTimeout(() => {
-          reconnectDelay = Math.min(1000, reconnectDelay * 2);
-          connect();
+          reconnectDelay = Math.min(60000, reconnectDelay * 2);
+          // Only reconnect if we still have a token (user didn't logout in the meantime)
+          if (token) connect(); 
         }, reconnectDelay);
       };
     };
 
     connect();
     return () => { try { es.close(); } catch(_) {} };
-  }, []);
+  }, [token]);
 
   const clearFieldAlertsLocal = (fieldId) => {
     setAlertsMap(prev => {
@@ -85,8 +97,20 @@ export function AlertsProvider({ children }) {
     });
   };
 
+  const login = (newToken) => {
+    localStorage.setItem("token", newToken);
+    setToken(newToken);
+  };
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setToken(null);
+    setAlertsMap({}); // Clear alerts on logout
+  };
+
   return (
-    <AlertsContext.Provider value={{ alertsMap, clearFieldAlertsLocal }}>
+    <AlertsContext.Provider value={{ alertsMap, clearFieldAlertsLocal, login, logout }}>
       {children}
     </AlertsContext.Provider>
   );

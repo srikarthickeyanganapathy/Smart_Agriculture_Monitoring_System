@@ -8,7 +8,7 @@ import { detectDisease } from "../api/diseaseAPI";
  * Accepts `fieldId` prop to identify the field for the backend.
  * Accepts `plantId` prop (optional) to identify specific plant.
  */
-const DiseasePredictionForm = ({ autoFilledData, fieldId, plantId }) => {
+const DiseasePredictionForm = ({ autoFilledData, fieldId, plantId, onSuccess }) => {
   const [formData, setFormData] = useState({
     ndvi: "",
     temperature: "",
@@ -66,6 +66,10 @@ const DiseasePredictionForm = ({ autoFilledData, fieldId, plantId }) => {
       };
       const data = await detectDisease(payload);
       setResult(data);
+      
+      // Trigger refresh callback
+      if (onSuccess) onSuccess();
+      
     } catch (err) {
       console.error(err);
       setError("Failed to predict disease. Is the backend running?");

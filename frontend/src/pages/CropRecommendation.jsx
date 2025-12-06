@@ -29,10 +29,14 @@ const CropRecommendation = () => {
   }, []);
 
   // Fetch global history on mount (User wants all checks done)
-  useEffect(() => {
+  const loadHistory = () => {
     fetchCropHistory()
       .then(data => setHistory(data || []))
       .catch(err => console.error("Failed to load history", err));
+  };
+
+  useEffect(() => {
+    loadHistory();
   }, []); // Empty dependency array = run once on mount
 
   // When field is selected, compute averages and update autoFilledData
@@ -126,7 +130,7 @@ const CropRecommendation = () => {
                </div>
                <div className="p-6">
                  {/* We pass key to force re-render if needed, or better, pass prop to update state */}
-                 <CropRecommendationForm autoFilledData={autoFilledData} fieldId={selectedFieldId} />
+                 <CropRecommendationForm autoFilledData={autoFilledData} fieldId={selectedFieldId} onSuccess={loadHistory} />
                </div>
             </div>
           </div>
@@ -134,13 +138,19 @@ const CropRecommendation = () => {
           {/* Right Column: History Sidebar */}
           <div className="lg:col-span-1">
              <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-xl ring-1 ring-black/5 sticky top-24">
-                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                   <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                   Recent Recommendations
-                </h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                     <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                     Recent
+                  </h3>
+                  <a href="/recommendations/crop/history" className="text-sm font-medium text-green-600 hover:text-green-700 hover:underline">
+                    View All
+                  </a>
+                </div>
+                
                 <div className="space-y-4">
                   {history.length > 0 ? (
-                     history.map((item, i) => {
+                     history.slice(0, 5).map((item, i) => {
                        // Robust mapping for backend keys:
                        // Keys might be cropName, recommendedCrop, or crop
                        // Time might be predictionDate or predictionTime
@@ -174,6 +184,14 @@ const CropRecommendation = () => {
                      </div>
                   )}
                 </div>
+                
+                {history.length > 5 && (
+                  <div className="mt-6 text-center">
+                    <a href="/recommendations/crop/history" className="text-sm text-gray-500 hover:text-gray-900 font-medium">
+                       + {history.length - 5} older records
+                    </a>
+                  </div>
+                )}
              </div>
           </div>
         </div>

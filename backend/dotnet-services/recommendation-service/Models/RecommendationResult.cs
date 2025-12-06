@@ -5,18 +5,13 @@ namespace SmartAgri.Recommendation.Models
 {
     public class RecommendationResult
     {
-        public string Status => "ok"; // Hardcode status for compatibility
-        
-        [JsonPropertyName("recommendations")] // Critical: wrapper expects this key
-        public List<CropScore> RecommendedCrops { get; set; } = new List<CropScore>();
-        
-        // Backward Compatibility / Convenience Properties
-        [JsonPropertyName("recommendedCrop")]
-        public string RecommendedCrop => RecommendedCrops.Count > 0 ? RecommendedCrops[0].Crop : "Unknown";
-        
-        [JsonPropertyName("confidence")]
-        public double Confidence => RecommendedCrops.Count > 0 ? RecommendedCrops[0].Score : 0.0;
-
-        public string DatasetUrlUsed { get; set; }
+        public string Status { get; set; } = "ok";
+        public List<CropScore> Recommendations { get; set; } = new List<CropScore>();
+        public string RecommendedCrop { get; set; }
+        public double Confidence { get; set; }
+        public string DatasetUsed { get; set; }
+        public string LogicUsed { get; set; }
+        public float AdjustedRainfallUsed { get; set; }
+        public List<string> Warnings { get; set; } = new List<string>();
     }
 }

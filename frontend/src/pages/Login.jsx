@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios'; // <--- 1. Import Axios
+import axios from 'axios';
+import { useAlerts } from '../context/AlertsContext';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAlerts();
   const [credentials, setCredentials] = useState({
     email: '',
     password: ''
@@ -11,6 +13,13 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+
+  // Redirect if already logged in
+  React.useEffect(() => {
+    if (localStorage.getItem("token")) {
+      navigate('/analytics');
+    }
+  }, [navigate]);
 
   const handleChange = (e) => {
     setCredentials({
@@ -20,7 +29,7 @@ const Login = () => {
     if (error) setError('');
   };
 
-  const handleSubmit = async (e) => { // <--- Make this async
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -32,26 +41,20 @@ const Login = () => {
     }
 
     try {
-      // --- 2. REAL BACKEND CALL ---
       const response = await axios.post('http://localhost:8080/api/auth/login', {
-        // Backend expects "username", but form has "email". We map them here.
         username: credentials.email, 
         password: credentials.password
       });
 
-      // If successful:
       const { token } = response.data;
       
-      // 3. Store the Token securely
-      localStorage.setItem('token', token);
+      login(token); // Update context state
       localStorage.setItem('user', credentials.email);
 
-      // 4. Navigate to Dashboard
       navigate('/analytics');
 
     } catch (err) {
       console.error("Login failed:", err);
-      // Handle specific error messages
       if (err.response && err.response.status === 401) {
         setError('Invalid email or password.');
       } else {

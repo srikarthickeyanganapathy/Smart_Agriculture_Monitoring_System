@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import NotificationBell from "./NotificationBell";
 import FieldAlerts from "./FieldAlerts";
 import PlantDetailPopup from "./PlantDetailPopup";
-import { rainbowColor } from "../utils/color";
+import { getNdviColor } from "../utils/color";
 import { adjustField } from "../../api/analyticsAPI";
 import { useAlerts } from "../../context/AlertsContext";
 
@@ -46,7 +46,7 @@ export default function PixelFieldView({ field, onAdjust, onClose }) {
                 Field {field.fieldId || field.field_id}
               </h2>
               <span className="text-sm font-medium text-gray-500 px-3 py-1 bg-white rounded-full border border-gray-200">
-                {field.cropType || field.crop_type || "Crop"}
+                {field.crop || field.cropType || field.crop_type || "Crop"}
               </span>
             </div>
             
@@ -72,7 +72,7 @@ export default function PixelFieldView({ field, onAdjust, onClose }) {
           {/* Right Actions */}
           <div className="flex items-center gap-3 flex-shrink-0">
             <NotificationBell 
-              fieldId={field.field_id} 
+              fieldId={field.fieldId || field.field_id} 
               onClick={() => setAlertsOpen(!alertsOpen)} 
             />
             <button 
@@ -94,7 +94,7 @@ export default function PixelFieldView({ field, onAdjust, onClose }) {
             <div className="grid grid-cols-10 gap-1.5 w-[500px] h-[500px]">
               {(field.plants || []).map((p, i) => {
                 const ndvi = p.ndvi ?? 0;
-                const color = rainbowColor(ndvi, -1, 1);
+                const color = getNdviColor(ndvi);
                 return (
                   <div
                     key={i}
@@ -107,20 +107,24 @@ export default function PixelFieldView({ field, onAdjust, onClose }) {
             </div>
           </div>
           
-          {/* Legend - Apple Style */}
-          <div className="mt-4 flex items-center gap-4 text-xs text-gray-500">
+          {/* Legend - Updated with new colors */}
+          <div className="mt-4 flex items-center gap-6 text-xs text-gray-500">
             <span className="font-medium">Health Indicator:</span>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-500"></div>
-              <span>Low</span>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#2ecc71' }}></div>
+              <span>Healthy {'>'} 0.7</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-              <span>Medium</span>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#f1c40f' }}></div>
+              <span>Moderate</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span>High</span>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#e67e22' }}></div>
+              <span>Unhealthy</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#e74c3c' }}></div>
+              <span>Critical {'<'} 0.2</span>
             </div>
           </div>
         </div>

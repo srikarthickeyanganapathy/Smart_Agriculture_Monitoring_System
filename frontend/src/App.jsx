@@ -3,26 +3,29 @@ import { BrowserRouter, Routes, Route, useLocation, useNavigate, Link } from "re
 import Analytics from "./pages/Analytics";
 import FieldView from "./pages/FieldView";
 import Login from "./pages/Login";
+import LandingPage from "./pages/LandingPage"; // Import Landing Page
 import ProtectedRoute from './components/ProtectedRoute';
-import CropRecommendation from "./pages/CropRecommendation";       // New Page
-import DiseasePrediction from "./pages/DiseasePrediction";         // New Page
-import { AlertsProvider } from "./context/AlertsContext";
+import CropRecommendation from "./pages/CropRecommendation";
+import DiseasePrediction from "./pages/DiseasePrediction";
+import { AlertsProvider, useAlerts } from "./context/AlertsContext";
+import CropHistory from "./pages/CropHistory";
+import DiseaseHistory from "./pages/DiseaseHistory";
 
 // Header Component - Updated Navigation
 const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { logout } = useAlerts();
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    logout();
     navigate("/login");
   };
 
   const navItems = [
-    { path: "/analytics", label: "Dashboard" },
-    { path: "/recommendations/crop", label: "Crop Advisor" },    // Updated Link
-    { path: "/recommendations/disease", label: "Disease Risk" }, // Updated Link
+    { path: "/analytics", label: "Field Analytics" },
+    { path: "/recommendations/crop", label: "Crop Advisor" },
+    { path: "/recommendations/disease", label: "Disease Risk" },
   ];
 
   return (
@@ -82,9 +85,10 @@ const ContentWrapper = ({ children }) => (
 // Layout wrapper
 const AppLayout = ({ children }) => {
   const location = useLocation();
-  const isLoginPage = location.pathname === '/login' || location.pathname === '/';
+  // Hide layout header/footer for Login and Landing Page
+  const isPublicPage = location.pathname === '/login' || location.pathname === '/';
 
-  if (isLoginPage) {
+  if (isPublicPage) {
     return <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">{children}</div>;
   }
 
@@ -114,7 +118,7 @@ function App() {
       <AlertsProvider>
         <AppLayout>
           <Routes>
-            <Route path="/" element={<Login />} />
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
             <Route
               path="/analytics"
@@ -142,10 +146,26 @@ function App() {
               }
             />
             <Route
+              path="/recommendations/crop/history"
+              element={
+                <ProtectedRoute>
+                  <CropHistory />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/recommendations/disease"
               element={
                 <ProtectedRoute>
                   <DiseasePrediction />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/recommendations/disease/history"
+              element={
+                <ProtectedRoute>
+                  <DiseaseHistory />
                 </ProtectedRoute>
               }
             />
