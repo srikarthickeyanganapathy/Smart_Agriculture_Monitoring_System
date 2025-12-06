@@ -72,19 +72,36 @@ namespace SmartAgri.Recommendation.Services
             var topK = GetTopK(prediction.Score, probs, 10); 
 
             // Populate Result
-             var cropScores = topK.Select(t => new CropScore 
+            var cropScores = topK.Select(t => new CropScore 
             { 
                 Crop = t.Label, 
                 Score = Math.Round(t.Probability, 4) 
             }).ToList();
 
             var best = cropScores.FirstOrDefault();
+            var second = cropScores.Skip(1).FirstOrDefault();
+
+            // Option A: Margin-based certainty using RAW scores (before Softmax)
+            // Raw scores have larger separation, giving meaningful confidence values
+            double marginConfidence = 0.0;
+            if (prediction.Score != null && prediction.Score.Length >= 2)
+            {
+                var sortedRaw = prediction.Score.OrderByDescending(s => s).ToArray();
+                float topRaw = sortedRaw[0];
+                float secondRaw = sortedRaw[1];
+                
+                // Normalize: margin as percentage of top score's magnitude
+                // Using sigmoid to map any score difference to 0-1 range
+                double rawMargin = topRaw - secondRaw;
+                marginConfidence = 1.0 / (1.0 + Math.Exp(-rawMargin)); // Sigmoid scaling
+                marginConfidence = Math.Round(marginConfidence, 4);
+            }
 
             return new RecommendationResult
             {
                 Status = "ok",
                 RecommendedCrop = best?.Crop ?? "unknown",
-                Confidence = best?.Score ?? 0.0,
+                Confidence = marginConfidence,
                 Recommendations = cropScores,
                 DatasetUsed = "crop_recommendation_rebuilt (no humidity)",
                 Warnings = warnings

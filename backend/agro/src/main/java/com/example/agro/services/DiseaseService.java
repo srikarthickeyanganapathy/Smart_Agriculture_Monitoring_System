@@ -31,6 +31,10 @@ public class DiseaseService {
         entity.setProbability(resp.getProbability());
         entity.setPredictionTime(LocalDateTime.now());
 
+        // Save input parameters for history display
+        entity.setTemperature(req.temperature);
+        entity.setMoisture(req.moisture);
+
         // Rolling History: Keep max 4
         if (req.getFieldId() != null) {
             var history = diseasePredictionRepository.findByFieldIdOrderByPredictionTimeDesc(req.getFieldId());

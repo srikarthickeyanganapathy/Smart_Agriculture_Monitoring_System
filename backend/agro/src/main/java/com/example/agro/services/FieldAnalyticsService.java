@@ -103,13 +103,26 @@ public class FieldAnalyticsService {
                     newState.setFieldId(fieldId);
                     newState.setSnapshotTime(LocalDateTime.now());
 
-                    newState.setNitrogen(toDouble(resp.getOrDefault("nitrogen", resp.get("Soil_N"))));
-                    newState.setPhosphorus(toDouble(resp.getOrDefault("phosphorus", resp.get("Soil_P"))));
-                    newState.setPotassium(toDouble(resp.getOrDefault("potassium", resp.get("Soil_K"))));
-                    newState.setPh(toDouble(resp.getOrDefault("ph", resp.get("Soil_pH"))));
-                    newState.setMoisture(toDouble(resp.get("moisture")));
-                    newState.setTemperature(toDouble(resp.get("temperature")));
-                    newState.setRainfall(toDouble(resp.get("rainfall")));
+                    // Parse soil values - Python sends avg_* keys now
+                    newState.setNitrogen(toDoubleWithFallback(
+                            resp.getOrDefault("avg_nitrogen", resp.getOrDefault("nitrogen", resp.get("Soil_N"))),
+                            last != null ? last.getNitrogen() : 0.0));
+                    newState.setPhosphorus(toDoubleWithFallback(
+                            resp.getOrDefault("avg_phosphorus", resp.getOrDefault("phosphorus", resp.get("Soil_P"))),
+                            last != null ? last.getPhosphorus() : 0.0));
+                    newState.setPotassium(toDoubleWithFallback(
+                            resp.getOrDefault("avg_potassium", resp.getOrDefault("potassium", resp.get("Soil_K"))),
+                            last != null ? last.getPotassium() : 0.0));
+                    newState.setPh(toDoubleWithFallback(
+                            resp.getOrDefault("avg_ph", resp.getOrDefault("ph", resp.get("Soil_pH"))),
+                            last != null ? last.getPh() : 0.0));
+                    newState.setMoisture(toDoubleWithFallback(resp.getOrDefault("avg_moisture", resp.get("moisture")),
+                            last != null ? last.getMoisture() : 0.0));
+                    newState.setTemperature(
+                            toDoubleWithFallback(resp.getOrDefault("avg_temperature", resp.get("temperature")),
+                                    last != null ? last.getTemperature() : 0.0));
+                    newState.setRainfall(toDoubleWithFallback(resp.getOrDefault("avg_rainfall", resp.get("rainfall")),
+                            last != null ? last.getRainfall() : 0.0));
 
                     // Try avg_ keys first (matching init), then fallback
                     newState.setAvgNdvi(toDouble(resp.getOrDefault("avg_ndvi", resp.get("ndvi"))));
@@ -325,6 +338,24 @@ public class FieldAnalyticsService {
             }
         }
         return 0.0;
+    }
+
+    private Double toDoubleWithFallback(Object val, Double fallback) {
+        if (val == null)
+            return fallback;
+        if (val instanceof Number) {
+            double d = ((Number) val).doubleValue();
+            return d == 0.0 ? fallback : d;
+        }
+        if (val instanceof String) {
+            try {
+                double d = Double.parseDouble((String) val);
+                return d == 0.0 ? fallback : d;
+            } catch (NumberFormatException e) {
+                return fallback;
+            }
+        }
+        return fallback;
     }
 
     public FieldHistory adjustField(int fieldId) {

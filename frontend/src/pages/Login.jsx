@@ -1,64 +1,50 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { useAlerts } from '../context/AlertsContext';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { useAlerts } from "../context/AlertsContext";
 
 const Login = () => {
+  const [credentials, setCredentials] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAlerts();
-  const [credentials, setCredentials] = useState({
-    email: '',
-    password: ''
-  });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
 
   // Redirect if already logged in
-  React.useEffect(() => {
-    if (localStorage.getItem("token")) {
-      navigate('/analytics');
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      navigate("/analytics");
     }
   }, [navigate]);
 
   const handleChange = (e) => {
-    setCredentials({
-      ...credentials,
-      [e.target.name]: e.target.value
-    });
-    if (error) setError('');
+    setCredentials({ ...credentials, [e.target.name]: e.target.value });
+    setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-
-    if (!credentials.email || !credentials.password) {
-      setError('Please fill in all fields');
-      setLoading(false);
-      return;
-    }
+    setError("");
 
     try {
-      const response = await axios.post('http://localhost:8080/api/auth/login', {
-        username: credentials.email, 
-        password: credentials.password
+      const response = await axios.post("http://localhost:8080/api/auth/login", {
+        username: credentials.email,
+        password: credentials.password,
       });
 
       const { token } = response.data;
-      
-      login(token); // Update context state
-      localStorage.setItem('user', credentials.email);
-
-      navigate('/analytics');
-
+      login(token);
+      localStorage.setItem("user", credentials.email);
+      navigate("/analytics");
     } catch (err) {
-      console.error("Login failed:", err);
-      if (err.response && err.response.status === 401) {
-        setError('Invalid email or password.');
+      if (err.response) {
+        setError(err.response.data?.message || "Invalid credentials. Please try again.");
+      } else if (err.request) {
+        setError("Unable to connect to server. Please check your connection.");
       } else {
-        setError('Server error. Is the Java backend running?');
+        setError("An error occurred. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -66,128 +52,125 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-50 p-4">
-      <div className="bg-white border border-gray-200 rounded-3xl p-12 w-full max-w-md shadow-2xl">
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background Effects */}
+      <div className="absolute inset-0">
+        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-green-500/10 rounded-full blur-[120px]"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-emerald-500/10 rounded-full blur-[100px]"></div>
+      </div>
 
-        {/* Header */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl mb-4 shadow-lg">
-            <span className="text-white font-bold text-2xl">S</span>
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome Back
-          </h1>
-          <p className="text-gray-500">
-            Sign in to access your analytics dashboard
-          </p>
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 text-red-600 text-sm flex items-center gap-3 animate-pulse">
-            <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            <span>{error}</span>
-          </div>
-        )}
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-
-          {/* Email Input */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-gray-700">
-              Email Address / Username
-            </label>
-            <input
-              type="text" // Changed to text to allow simple usernames if needed
-              name="email"
-              value={credentials.email}
-              onChange={handleChange}
-              placeholder="admin"
-              className="border border-gray-300 rounded-xl px-4 py-3.5 text-base 
-                       focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent
-                       transition-all duration-200"
-            />
-          </div>
-
-          {/* Password Input */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-gray-700">
-              Password
-            </label>
-            <input
-              type="password"
-              name="password"
-              value={credentials.password}
-              onChange={handleChange}
-              placeholder="••••••••"
-              className="border border-gray-300 rounded-xl px-4 py-3.5 text-base 
-                       focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent
-                       transition-all duration-200"
-            />
-          </div>
-
-          {/* Remember Me & Forgot Password */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="remember"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-4 h-4 accent-green-600 rounded"
-              />
-              <label htmlFor="remember" className="text-sm text-gray-600 cursor-pointer">
-                Remember me
-              </label>
+      {/* Login Card */}
+      <div className="relative z-10 w-full max-w-md">
+        {/* Logo */}
+        <div className="text-center mb-8 animate-fade-in-down">
+          <div className="inline-flex items-center gap-3 mb-6">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-400 via-green-500 to-green-600 flex items-center justify-center shadow-xl shadow-green-500/30">
+              <span className="text-white font-black text-2xl">S</span>
             </div>
-            <a href="#" className="text-sm font-medium text-green-600 hover:text-green-700 transition-colors">
-              Forgot password?
-            </a>
           </div>
+          <h1 className="text-3xl font-bold text-white mb-2">Welcome back</h1>
+          <p className="text-gray-400">Sign in to access your dashboard</p>
+        </div>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-green-600 text-white py-4 rounded-full font-semibold text-base
-                       hover:bg-green-700 hover:scale-[1.02] active:scale-95 transition-all duration-300 
-                       disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl
-                       mt-2 flex justify-center items-center"
-          >
-            {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        {/* Form Card */}
+        <div className="bg-gray-900/50 backdrop-blur-xl border border-white/10 rounded-3xl p-8 animate-fade-in-up">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Email Field */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Email or Username
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  name="email"
+                  value={credentials.email}
+                  onChange={handleChange}
+                  required
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500/50 transition-all"
+                  placeholder="Enter your email"
+                />
+              </div>
+            </div>
+
+            {/* Password Field */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type="password"
+                  name="password"
+                  value={credentials.password}
+                  onChange={handleChange}
+                  required
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500/50 transition-all"
+                  placeholder="Enter your password"
+                />
+              </div>
+            </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="flex items-center gap-2 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm animate-fade-in">
+                <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
-                Authenticating...
-              </span>
-            ) : (
-              'Sign In'
+                <span>{error}</span>
+              </div>
             )}
-          </button>
-        </form>
 
-        {/* Footer / Request Access */}
-        <div className="relative my-8">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-4 bg-white text-gray-500">Don't have an account?</span>
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full relative group overflow-hidden bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold py-4 rounded-xl transition-all duration-300 hover:shadow-xl hover:shadow-green-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                {loading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Signing in...
+                  </>
+                ) : (
+                  <>
+                    Sign In
+                    <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </>
+                )}
+              </span>
+            </button>
+          </form>
+
+          {/* Demo Credentials */}
+          <div className="mt-6 pt-6 border-t border-white/5">
+            <p className="text-center text-xs text-gray-500 mb-3">Demo credentials for testing:</p>
+            <div className="flex justify-center gap-4 text-xs">
+              <div className="px-3 py-1.5 bg-white/5 rounded-lg text-gray-400">
+                <span className="text-gray-500">User:</span> admin
+              </div>
+              <div className="px-3 py-1.5 bg-white/5 rounded-lg text-gray-400">
+                <span className="text-gray-500">Pass:</span> password
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Contact Admin Button (Since manual registration only) */}
-        <a 
-          href="mailto:admin@sams-project.com?subject=Request Access to SAMS" 
-          className="block text-center py-3.5 border-2 border-gray-300 rounded-full font-semibold text-gray-700 hover:border-green-500 hover:text-green-600 hover:bg-green-50 transition-all duration-300"
-        >
-          Request Access from Admin
-        </a>
+        {/* Back Link */}
+        <div className="text-center mt-8">
+          <a 
+            href="/" 
+            className="text-gray-400 hover:text-white text-sm transition-colors inline-flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Home
+          </a>
+        </div>
       </div>
     </div>
   );
