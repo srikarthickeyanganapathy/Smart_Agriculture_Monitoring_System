@@ -1,0 +1,157 @@
+/* Import fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* Import Tailwind v4 */
+@import "tailwindcss";
+
+/* --------------------------------------
+   Base Styling (compatible with Tailwind v4)
+   -------------------------------------- */
+@layer base {
+  html, body, :root {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  *, *::before, *::after {
+    box-sizing: inherit;
+  }
+
+  body {
+    /* Tailwind v4 cannot @apply unknown fonts */
+    font-family: 'Inter', system-ui, sans-serif;
+
+    /* Light theme */
+    background: #ffffff;
+    color: #111111;
+
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    margin: 0;
+  }
+}
+
+/* --------------------------------------
+   Scrollbar (raw CSS — Tailwind cannot style pseudo-elements)
+   -------------------------------------- */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f0f0f0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cccccc;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #999999;
+}
+
+/* Firefox */
+html {
+  scrollbar-color: #cccccc #f0f0f0;
+  scrollbar-width: thin;
+}
+
+/* --------------------------------------
+   Animations (ALL-Compatible)
+   -------------------------------------- */
+@keyframes fadeIn {
+  from { opacity: 0 }
+  to { opacity: 1 }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn .4s ease-out both;
+}
+
+.animate-slide-up {
+  animation: slideUp .45s ease-out both;
+}
+
+.animate-scale-in {
+  animation: scaleIn .35s ease-out both;
+}
+
+/* --------------------------------------
+   Card Hover Effect
+   -------------------------------------- */
+.card-hover {
+  transition: transform .3s ease, box-shadow .3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+
+/* --------------------------------------
+   Glass Effect
+   -------------------------------------- */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 12px;
+}
+
+/* --------------------------------------
+   Simple Safe Ripple Effect
+   -------------------------------------- */
+.btn-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-ripple:active::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(0,0,0,0.1);
+  animation: ripple-effect .4s ease-out;
+}
+
+@keyframes ripple-effect {
+  from { opacity: 0.4 }
+  to { opacity: 0 }
+}
+
+/* --------------------------------------
+   Skeleton Loader
+   -------------------------------------- */
+@keyframes skeleton-loading {
+  0% { background-position: -200px 0 }
+  100% { background-position: calc(200px + 100%) 0 }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #e0e0e0 0px, #f5f5f5 40px, #e0e0e0 80px);
+  background-size: 200px 100%;
+  animation: skeleton-loading 1.2s infinite linear;
+}
+
+/* Hide scrollbars but keep scroll functionality */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
