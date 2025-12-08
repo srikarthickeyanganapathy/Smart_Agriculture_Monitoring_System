@@ -200,54 +200,62 @@ class FieldProcessor:
         if all_plants:
              # Yield Prediction
              if yield_model_func:
-                spec_batch = np.stack([p.spectral for p in all_plants], axis=0)
-                spec_batch = spec_batch.reshape(spec_batch.shape[0], self.n_bands, 1)
+                try:
+                    spec_batch = np.stack([p.spectral for p in all_plants], axis=0)
+                    spec_batch = spec_batch.reshape(spec_batch.shape[0], self.n_bands, 1)
 
-                agro_keys = ["Soil_N", "Soil_P", "Soil_K", "Soil_pH", "Rainfall", "Temperature", "SoilMoisture"]
-                def get_val(d, k): return float(d.get(k, 0.0))
-                
-                agro_batch = np.array([[get_val(p.agro, k) for k in agro_keys] for p in all_plants], dtype=float)
-                
-                preds = yield_model_func(spec_batch, agro_batch)
-                for i, p in enumerate(all_plants):
-                     p.yield_prediction = float(preds[i])
+                    agro_keys = ["Soil_N", "Soil_P", "Soil_K", "Soil_pH", "Rainfall", "Temperature", "SoilMoisture"]
+                    def get_val(d, k): return float(d.get(k, 0.0))
+                    
+                    agro_batch = np.array([[get_val(p.agro, k) for k in agro_keys] for p in all_plants], dtype=float)
+                    
+                    preds = yield_model_func(spec_batch, agro_batch)
+                    
+                    for i, p in enumerate(all_plants):
+                         val = float(preds[i])
+                         p.yield_prediction = max(0.0, val) # Ensure non-negative
+                except Exception as e:
+                    print(f"Yield Prediction Error: {e}")
+                    # Keep previous values or default to 0
+                    for p in all_plants:
+                        if p.yield_prediction is None: p.yield_prediction = 0.0
 
              # Disease Prediction
              if disease_model_func:
-                 # Construct DataFrame for disease model
-                 # Features must match training: NDVI, Soil_N, Soil_P, Soil_K, Soil_pH, Rainfall, Temperature, SoilMoisture
-                 d_data = []
-                 for p in all_plants:
-                     row = {
-                         "NDVI": p.ndvi,
-                         "Soil_N": p.agro.get("Soil_N", 0),
-                         "Soil_P": p.agro.get("Soil_P", 0),
-                         "Soil_K": p.agro.get("Soil_K", 0),
-                         "Soil_pH": p.agro.get("Soil_pH", 6.5),
-                         "Rainfall": p.agro.get("Rainfall", 0),
-                         "Temperature": p.agro.get("Temperature", 0),
-                         "SoilMoisture": p.agro.get("SoilMoisture", 0)
-                     }
-                     d_data.append(row)
-                 
-                 df_disease = pd.DataFrame(d_data)
-                 disease_results = disease_model_func(df_disease) # Returns list of (status, prob)
-                 
-                 for i, p in enumerate(all_plants):
-                     status, prob = disease_results[i]
-                     p.disease_status = status
+                 try:
+                     # Construct DataFrame for disease model
+                     d_data = []
+                     for p in all_plants:
+                         row = {
+                             "NDVI": p.ndvi,
+                             "Soil_N": p.agro.get("Soil_N", 0),
+                             "Soil_P": p.agro.get("Soil_P", 0),
+                             "Soil_K": p.agro.get("Soil_K", 0),
+                             "Soil_pH": p.agro.get("Soil_pH", 6.5),
+                             "Rainfall": p.agro.get("Rainfall", 0),
+                             "Temperature": p.agro.get("Temperature", 0),
+                             "SoilMoisture": p.agro.get("SoilMoisture", 0)
+                         }
+                         d_data.append(row)
                      
-                     # CRITICAL FIX: Normalize 'disease_prob' to mean 'Risk of Disease'
-                     # The model returns CONFIDENCE. 
-                     # If confident 'healthy' (0.95), Risk should be (1 - 0.95) = 0.05
-                     # If confident 'diseased' (0.95), Risk should be 0.95
-                     if status == "healthy":
-                         p.disease_prob = max(0.0, 1.0 - prob)
-                     else:
-                         p.disease_prob = prob
+                     df_disease = pd.DataFrame(d_data)
+                     disease_results = disease_model_func(df_disease) # Returns list of (status, prob)
                      
-                     # Sync Health immediately
-                     p.health = 1.0 - p.disease_prob
+                     for i, p in enumerate(all_plants):
+                         status, prob = disease_results[i]
+                         p.disease_status = status
+                         
+                         # CRITICAL FIX: Normalize 'disease_prob' to mean 'Risk of Disease'
+                         if status == "healthy":
+                             p.disease_prob = max(0.0, 1.0 - prob)
+                         else:
+                             p.disease_prob = prob
+                         
+                         # Sync Health immediately
+                         p.health = 1.0 - p.disease_prob
+                 except Exception as e:
+                     print(f"Disease Prediction Error: {e}")
+                     pass
 
         # 4. Final Aggregates
         results = []

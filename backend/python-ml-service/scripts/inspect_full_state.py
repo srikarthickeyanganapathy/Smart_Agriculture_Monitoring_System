@@ -5,30 +5,23 @@ import json
 BASE_URL = "http://localhost:8001"
 
 def test():
-    print("Inspecting Bad Plant Distribution...")
+    print("Inspecting Soil Values in API Response...")
     try:
-        # 1. INIT
-        print("1. Initializing...")
-        resp = requests.get(f"{BASE_URL}/simulate/init?n_fields=5")
+        resp = requests.get(f"{BASE_URL}/simulate/init?n_fields=2")
         data = resp.json()
-        fields = data.get("fields", [])
+        f = data.get("fields", [])[0]
         
-        # Analyze Field 0 plants
-        plants = fields[0]['plants']
-        total = len(plants)
-        healthy = sum(1 for p in plants if p['disease_status'] == 'healthy')
-        at_risk = sum(1 for p in plants if p['disease_status'] == 'at_risk')
-        diseased = sum(1 for p in plants if p['disease_status'] == 'diseased')
+        print(f"   Field 1 Response Keys: {list(f.keys())}")
+        print(f"   avg_nitrogen: {f.get('avg_nitrogen', 'MISSING!')}")
+        print(f"   avg_phosphorus: {f.get('avg_phosphorus', 'MISSING!')}")
+        print(f"   avg_potassium: {f.get('avg_potassium', 'MISSING!')}")
+        print(f"   avg_moisture: {f.get('avg_moisture', 'MISSING!')}")
+        print(f"   avg_temperature: {f.get('avg_temperature', 'MISSING!')}")
         
-        print(f"   Field 1 Distribution (N={total}):")
-        print(f"   Healthy: {healthy} ({healthy/total*100:.1f}%)")
-        print(f"   At Risk: {at_risk} ({at_risk/total*100:.1f}%)")
-        print(f"   Diseased: {diseased} ({diseased/total*100:.1f}%)")
-        
-        if at_risk + diseased > 5: # Expecting around 20
-             print("   PASS: Bad plants generated.")
+        if f.get('avg_nitrogen', 0) > 0:
+             print("   PASS: Soil aggregates returned!")
         else:
-             print("   FAIL: Too few bad plants.")
+             print("   FAIL: Soil aggregates are 0 or missing.")
 
     except Exception as e:
         print("Error:", e)

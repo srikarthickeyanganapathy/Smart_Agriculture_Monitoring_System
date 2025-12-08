@@ -1,15 +1,42 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, memo } from "react";
 import { startSimulation, fetchFieldSimulation } from "../api/analyticsAPI";
 import Heatmap5Fields from "../components/analytics/Heatmap5Fields";
 import LiveAlerts from "../components/analytics/LiveAlerts";
+
+// Memoized stat card for performance
+const StatCard = memo(({ icon, label, value, trend, trendUp }) => (
+  <div className="group relative bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-6 hover:shadow-xl hover:shadow-green-500/5 hover:border-green-200/50 dark:hover:border-green-800/50 transition-all duration-300 card-hover overflow-hidden">
+    <div className="absolute inset-0 bg-gradient-to-br from-green-50/0 to-green-50/50 dark:from-green-900/0 dark:to-green-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+    
+    <div className="relative z-10 flex flex-col items-center text-center">
+      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/50 dark:to-green-800/50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 text-green-600 dark:text-green-400">
+        {icon}
+      </div>
+      <h3 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+        {label}
+      </h3>
+      <div className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-1 tracking-tight">
+        {value}
+      </div>
+      {trend && (
+        <p className={`text-xs font-medium flex items-center gap-1 ${trendUp ? 'text-green-600 dark:text-green-400' : 'text-gray-500'}`}>
+          {trendUp && (
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+            </svg>
+          )}
+          {trend}
+        </p>
+      )}
+    </div>
+  </div>
+));
 
 const Analytics = () => {
   const [fields, setFields] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // startSimulation(); // Backend now auto-initializes if empty
-
     const fetchData = async () => {
       try {
         const res = await fetchFieldSimulation();
@@ -24,243 +51,206 @@ const Analytics = () => {
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 5000); // Poll every 5s for live updates
-
+    const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
   }, []);
 
-  // Calculate aggregate metrics
-  // Calculate aggregate metrics
-  const totalFields = fields.length;
+  const { totalFields, avgNDVI, avgHealth, avgYield } = useMemo(() => {
+    const safeNum = (v) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    };
 
-  const safeNum = (v) => {
-    const n = Number(v);
-    return Number.isFinite(n) ? n : 0;
-  };
+    const total = fields.length;
+    const ndvi = total > 0 
+      ? (fields.reduce((sum, f) => sum + safeNum(f.avgNdvi || f.avg_ndvi), 0) / total).toFixed(3)
+      : "0.000";
+    const health = total > 0
+      ? (fields.reduce((sum, f) => sum + safeNum(f.avgHealth || f.avg_health), 0) / total * 100).toFixed(1)
+      : "0.0";
+    const yld = total > 0
+      ? (fields.reduce((sum, f) => sum + safeNum(f.avgYield || f.avg_yield), 0) / total).toFixed(2)
+      : "0.00";
 
-  const avgNDVI = fields.length > 0 
-    ? (fields.reduce((sum, f) => sum + safeNum(f.avgNdvi || f.avg_ndvi), 0) / fields.length).toFixed(3)
-    : "0.000";
-  const avgHealth = fields.length > 0
-    ? (fields.reduce((sum, f) => sum + safeNum(f.avgHealth || f.avg_health), 0) / fields.length * 100).toFixed(1)
-    : "0.0";
-  const avgYield = fields.length > 0
-    ? (fields.reduce((sum, f) => sum + safeNum(f.avgYield || f.avg_yield), 0) / fields.length).toFixed(2)
-    : "0.00";
+    return { totalFields: total, avgNDVI: ndvi, avgHealth: health, avgYield: yld };
+  }, [fields]);
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-white">
-        <div className="w-16 h-16 border-4 border-gray-200 border-t-green-600 rounded-full animate-spin"></div>
-        <div className="mt-6 text-lg text-gray-600 font-medium">Initializing Digital Twin</div>
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="relative">
+          <div className="w-20 h-20 border-4 border-gray-100 dark:border-gray-800 rounded-full"></div>
+          <div className="absolute inset-0 w-20 h-20 border-4 border-transparent border-t-green-500 rounded-full animate-spin"></div>
+        </div>
+        <div className="mt-8 text-lg text-gray-600 dark:text-gray-300 font-medium">Initializing Digital Twin</div>
+        <div className="mt-2 text-sm text-gray-400">Connecting to field sensors...</div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white min-h-screen">
-      {/* Hero Section with Metrics */}
-      <div className="max-w-7xl mx-auto px-6 py-12">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold text-gray-900 mb-4 tracking-tight">
-            Field Analytics
-          </h1>
-          <p className="text-xl text-gray-500 max-w-2xl mx-auto">
-            Real-time monitoring and insights for your agricultural operations
-          </p>
+    <div className="min-h-screen">
+      {/* Header */}
+      <div className="text-center mb-12">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-50 dark:bg-green-900/30 border border-green-100 dark:border-green-800 mb-6">
+          <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+          <span className="text-sm text-green-700 dark:text-green-400 font-medium">Live Monitoring Active</span>
         </div>
+        <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
+          Field Analytics
+        </h1>
+        <p className="text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
+          Real-time monitoring and AI-powered insights for your agricultural operations
+        </p>
+      </div>
 
-        {/* Metrics Cards - Apple Style */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
-          {/* Metric Card 1 */}
-          <div className="group bg-white rounded-2xl border border-gray-200 p-8 hover:shadow-2xl hover:scale-105 transition-all duration-300">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mb-4">
-                <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Active Fields
-              </h3>
-              <div className="text-5xl font-bold text-gray-900 mb-2">
-                {totalFields}
-              </div>
-              <p className="text-sm text-green-600 font-medium">
-                All monitored
-              </p>
-            </div>
-          </div>
+      {/* Metrics Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-12">
+        <StatCard
+          icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>}
+          label="Active Fields"
+          value={totalFields}
+          trend="All monitored"
+          trendUp={true}
+        />
+        <StatCard
+          icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" /></svg>}
+          label="Average NDVI"
+          value={avgNDVI}
+          trend="+0.042 vs last week"
+          trendUp={true}
+        />
+        <StatCard
+          icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+          label="Crop Health"
+          value={`${avgHealth}%`}
+          trend="Optimal condition"
+          trendUp={true}
+        />
+        <StatCard
+          icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>}
+          label="Average Yield"
+          value={avgYield}
+          trend="+2.3% increase"
+          trendUp={true}
+        />
+      </div>
 
-          {/* Metric Card 2 */}
-          <div className="group bg-white rounded-2xl border border-gray-200 p-8 hover:shadow-2xl hover:scale-105 transition-all duration-300">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mb-4">
-                <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-                </svg>
+      {/* Field Map Section */}
+      <div className="mb-12">
+        <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-lg shadow-gray-200/50 dark:shadow-none overflow-hidden">
+          <div className="bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border-b border-gray-100 dark:border-gray-800 px-6 sm:px-8 py-5">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+                  Digital Twin Field Map
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Live visualization • Updated every 5 seconds
+                </p>
               </div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Average NDVI
-              </h3>
-              <div className="text-5xl font-bold text-gray-900 mb-2">
-                {avgNDVI}
-              </div>
-              <p className="text-sm text-green-600 font-medium">
-                +0.042 from last week
-              </p>
-            </div>
-          </div>
-
-          {/* Metric Card 3 */}
-          <div className="group bg-white rounded-2xl border border-gray-200 p-8 hover:shadow-2xl hover:scale-105 transition-all duration-300">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mb-4">
-                <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Crop Health
-              </h3>
-              <div className="text-5xl font-bold text-gray-900 mb-2">
-                {avgHealth}%
-              </div>
-              <p className="text-sm text-green-600 font-medium">
-                Optimal condition
-              </p>
-            </div>
-          </div>
-
-          {/* Metric Card 4 */}
-          <div className="group bg-white rounded-2xl border border-gray-200 p-8 hover:shadow-2xl hover:scale-105 transition-all duration-300">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mb-4">
-                <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
-              </div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Average Yield
-              </h3>
-              <div className="text-5xl font-bold text-gray-900 mb-2">
-                {avgYield}
-              </div>
-              <p className="text-sm text-green-600 font-medium">
-                +2.3% increase
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Field Map Section - Full Width Apple Style */}
-        <div className="mb-16">
-          <div className="bg-gray-50 rounded-3xl overflow-hidden border border-gray-200 shadow-lg">
-            <div className="bg-white border-b border-gray-200 px-8 py-6">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-1">
-                    Digital Twin Field Map
-                  </h2>
-                  <p className="text-sm text-gray-500">
-                    Live visualization of all monitored fields
-                  </p>
-                </div>
-                <button className="bg-green-600 text-white font-semibold px-6 py-3 rounded-full hover:bg-green-700 transition-all duration-200 shadow-md hover:shadow-lg text-sm">
-                  Refresh Scan
-                </button>
-              </div>
-            </div>
-            <div className="p-8 min-h-[500px] bg-white">
-              <Heatmap5Fields fields={fields} />
-            </div>
-          </div>
-        </div>
-
-        {/* Two Column Layout - Alerts & Recommendations */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
-          {/* Alerts Panel */}
-          <div className="bg-gray-50 rounded-3xl overflow-hidden border border-gray-200 shadow-lg">
-            <div className="bg-white border-b border-gray-200 px-8 py-6">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-1">
-                    Real-time Alerts
-                  </h2>
-                  <p className="text-sm text-gray-500">
-                    Instant notifications from your fields
-                  </p>
-                </div>
-                <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">
-                  Live
+              <div className="flex items-center gap-3">
+                <span className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-medium">
+                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                  Real-time
                 </span>
               </div>
             </div>
-            <div className="p-6 max-h-[500px] overflow-y-auto bg-white">
-              {fields.length > 0 ? (
-                <div className="space-y-3">
-                  {fields.map((field, idx) => (
-                    <LiveAlerts key={field.fieldId || field.field_id || idx} fieldId={field.fieldId || field.field_id} />
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                  <svg className="w-20 h-20 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <div className="text-lg font-semibold text-gray-600 mb-2">All Clear</div>
-                  <div className="text-sm text-gray-500">No alerts at this time</div>
-                </div>
-              )}
+          </div>
+          <div className="p-4 sm:p-8 bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 min-h-[400px]">
+            <Heatmap5Fields fields={fields} />
+          </div>
+        </div>
+      </div>
+
+      {/* Two Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+        {/* Alerts Panel */}
+        <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-lg shadow-gray-200/50 dark:shadow-none overflow-hidden">
+          <div className="bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border-b border-gray-100 dark:border-gray-800 px-6 py-5">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+                  Real-time Alerts
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Instant notifications from sensors
+                </p>
+              </div>
+              <span className="flex items-center gap-1.5 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">
+                <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
+                Live
+              </span>
             </div>
           </div>
-
-          {/* AI Recommendations */}
-          <div className="bg-gradient-to-br from-green-50 to-white rounded-3xl overflow-hidden border border-gray-200 shadow-lg">
-            <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200 px-8 py-6">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-1">
-                    AI Recommendations
-                  </h2>
-                  <p className="text-sm text-gray-500">
-                    Smart insights powered by machine learning
-                  </p>
-                </div>
-                <button className="text-green-600 hover:text-green-700 font-semibold text-sm transition-colors duration-200 flex items-center gap-1">
-                  View All
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
+          <div className="p-4 sm:p-6 max-h-[400px] overflow-y-auto no-scrollbar">
+            {fields.length > 0 ? (
+              <div className="space-y-3">
+                {fields.map((field, idx) => (
+                  <LiveAlerts key={field.fieldId || field.field_id || idx} fieldId={field.fieldId || field.field_id} />
+                ))}
               </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                <div className="w-16 h-16 rounded-full bg-green-50 dark:bg-green-900/30 flex items-center justify-center mb-4">
+                  <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div className="text-lg font-semibold text-gray-600 dark:text-gray-300 mb-1">All Clear</div>
+                <div className="text-sm text-gray-500">No alerts at this time</div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* AI Recommendations */}
+        <div className="bg-gradient-to-br from-green-50 via-white to-white dark:from-green-900/20 dark:via-gray-900 dark:to-gray-900 rounded-3xl border border-green-100/50 dark:border-green-800/50 shadow-lg shadow-green-200/20 dark:shadow-none overflow-hidden">
+          <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-green-100/50 dark:border-green-800/50 px-6 py-5">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+                  AI Recommendations
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Smart insights powered by ML
+                </p>
+              </div>
+              <a 
+                href="/recommendations/crop"
+                className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-semibold text-sm transition-colors flex items-center gap-1"
+              >
+                View All
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </a>
             </div>
-            <div className="p-8">
-              <div className="bg-white rounded-2xl border-l-4 border-green-500 p-6 shadow-sm">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0">
-                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                      <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                      </svg>
-                    </div>
+          </div>
+          <div className="p-4 sm:p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border-l-4 border-green-500 p-5 shadow-sm">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-green-100 to-green-50 dark:from-green-900/50 dark:to-green-800/50 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-gray-900 mb-2 text-lg">Smart Insight</h3>
-                    <p className="text-sm text-gray-700 leading-relaxed">
-                      Weather forecast shows optimal conditions for irrigation in the next 48 hours. Consider scheduling irrigation for Fields 2 and 4 to maximize crop yield efficiency.
-                    </p>
-                    <button 
-                      onClick={() => window.location.href = '/recommendations/crop'}
-                      className="mt-4 text-green-600 hover:text-green-700 font-semibold text-sm flex items-center gap-1 transition-colors"
-                    >
-                      Learn more
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-gray-900 dark:text-white mb-2">Smart Insight</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                    Weather forecast shows optimal conditions for irrigation in the next 48 hours. Consider scheduling irrigation for Fields 2 and 4 to maximize crop yield efficiency.
+                  </p>
+                  <a 
+                    href="/recommendations/crop"
+                    className="mt-4 inline-flex items-center gap-1 text-green-600 dark:text-green-400 hover:text-green-700 font-semibold text-sm transition-colors"
+                  >
+                    Get detailed recommendations
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </a>
                 </div>
               </div>
             </div>

@@ -223,6 +223,16 @@ class Field:
         self.avg_health = 0.0
         self.avg_yield = 0.0
         self.disease_risk = 0.0
+        
+        # Soil/Environmental Aggregates (NEW)
+        self.avg_nitrogen = 0.0
+        self.avg_phosphorus = 0.0
+        self.avg_potassium = 0.0
+        self.avg_moisture = 0.0
+        self.avg_temperature = 0.0
+        self.avg_rainfall = 0.0
+        self.avg_ph = 6.5
+        
         self.last_updated = datetime.utcnow()
         
 
@@ -236,6 +246,17 @@ class Field:
         self.avg_health = float(np.mean(healths)) if healths else 0.0
         self.avg_yield = float(np.mean(yields)) if yields else 0.0
         self.disease_risk = float(np.mean(disease_probs)) if disease_probs else 0.0
+        
+        # Soil/Environmental Aggregates (NEW)
+        if self.plants:
+            self.avg_nitrogen = float(np.mean([p.agro.get("Soil_N", 0) for p in self.plants]))
+            self.avg_phosphorus = float(np.mean([p.agro.get("Soil_P", 0) for p in self.plants]))
+            self.avg_potassium = float(np.mean([p.agro.get("Soil_K", 0) for p in self.plants]))
+            self.avg_moisture = float(np.mean([p.agro.get("SoilMoisture", 0) for p in self.plants]))
+            self.avg_temperature = float(np.mean([p.agro.get("Temperature", 0) for p in self.plants]))
+            self.avg_rainfall = float(np.mean([p.agro.get("Rainfall", 0) for p in self.plants]))
+            self.avg_ph = float(np.mean([p.agro.get("Soil_pH", 6.5) for p in self.plants]))
+        
         self.last_updated = datetime.utcnow()
 
     def to_dict(self, include_plants=True):
@@ -246,9 +267,19 @@ class Field:
             "avg_health": self.avg_health,
             "avg_yield": self.avg_yield,
             "disease_risk": self.disease_risk,
+            # Soil/Environmental Aggregates (NEW)
+            "avg_nitrogen": self.avg_nitrogen,
+            "avg_phosphorus": self.avg_phosphorus,
+            "avg_potassium": self.avg_potassium,
+            "avg_moisture": self.avg_moisture,
+            "avg_temperature": self.avg_temperature,
+            "avg_rainfall": self.avg_rainfall,
+            "avg_ph": self.avg_ph,
+            # Metadata
             "last_updated": self.last_updated.isoformat(),
             "plants_count": len(self.plants)
         }
         if include_plants:
             base["plants"] = [p.to_dict() for p in self.plants]
         return base
+

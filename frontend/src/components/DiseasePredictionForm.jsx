@@ -4,9 +4,6 @@ import { detectDisease } from "../api/diseaseAPI";
 
 /**
  * Form to predict disease probability from Python ML Engine via Spring Boot
- * Accepts `autoFilledData` prop to populate based on selected field.
- * Accepts `fieldId` prop to identify the field for the backend.
- * Accepts `plantId` prop (optional) to identify specific plant.
  */
 const DiseasePredictionForm = ({ autoFilledData, fieldId, plantId, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -67,7 +64,6 @@ const DiseasePredictionForm = ({ autoFilledData, fieldId, plantId, onSuccess }) 
       const data = await detectDisease(payload);
       setResult(data);
       
-      // Trigger refresh callback
       if (onSuccess) onSuccess();
       
     } catch (err) {
@@ -78,44 +74,44 @@ const DiseasePredictionForm = ({ autoFilledData, fieldId, plantId, onSuccess }) 
     }
   };
 
-  const inputClass = "w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all";
+  const inputClass = "w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all text-gray-900 dark:text-white placeholder-gray-400";
 
   const getRiskColor = (prob) => {
-    if (prob >= 0.7) return "text-red-600 bg-red-50 border-red-200";
-    if (prob >= 0.4) return "text-yellow-600 bg-yellow-50 border-yellow-200";
-    return "text-green-600 bg-green-50 border-green-200";
+    if (prob >= 0.7) return "text-red-600 bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800";
+    if (prob >= 0.4) return "text-yellow-600 bg-yellow-50 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800";
+    return "text-green-600 bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800";
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">NDVI</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">NDVI</label>
           <input type="number" step="0.01" name="ndvi" value={formData.ndvi} onChange={handleChange} className={inputClass} placeholder="0.0-1.0" required />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Temperature (°C)</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Temperature (°C)</label>
           <input type="number" step="0.1" name="temperature" value={formData.temperature} onChange={handleChange} className={inputClass} placeholder="10-45" required />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Soil Moisture (%)</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Soil Moisture (%)</label>
           <input type="number" step="0.1" name="moisture" value={formData.moisture} onChange={handleChange} className={inputClass} placeholder="20-80" required />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Nitrogen</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nitrogen</label>
           <input type="number" name="nitrogen" value={formData.nitrogen} onChange={handleChange} className={inputClass} placeholder="0-140" required />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Phosphorus</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phosphorus</label>
           <input type="number" name="phosphorus" value={formData.phosphorus} onChange={handleChange} className={inputClass} placeholder="5-145" required />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Potassium</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Potassium</label>
           <input type="number" name="potassium" value={formData.potassium} onChange={handleChange} className={inputClass} placeholder="5-205" required />
         </div>
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Irrigation Level</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Irrigation Level</label>
         <input type="number" step="0.1" name="irrigation" value={formData.irrigation} onChange={handleChange} className={inputClass} placeholder="0-100" required />
       </div>
 
@@ -124,30 +120,53 @@ const DiseasePredictionForm = ({ autoFilledData, fieldId, plantId, onSuccess }) 
         disabled={loading}
         className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white py-3.5 rounded-xl font-semibold hover:from-red-600 hover:to-red-700 transition-all disabled:opacity-50 shadow-lg hover:shadow-xl"
       >
-        {loading ? "Analyzing Condition..." : "Predict Disease Risk"}
+        {loading ? (
+          <span className="flex items-center justify-center gap-2">
+            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            Analyzing Condition...
+          </span>
+        ) : "Predict Disease Risk"}
       </button>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400 text-sm">
           {error}
         </div>
       )}
 
       {result && (
-        <div className={`p-6 rounded-xl border animate-fade-in ${getRiskColor(result.probability || 0)}`}>
-          <h4 className="font-bold text-gray-900 mb-3 text-lg">Disease Analysis</h4>
-          <div className="space-y-3">
+        <div className={`p-6 rounded-2xl border animate-fade-in ${getRiskColor(result.probability || 0)}`}>
+          <h4 className="font-bold text-gray-900 dark:text-white text-lg mb-4 pb-3 border-b border-black/5 dark:border-white/10">Disease Analysis</h4>
+          <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Predicted Disease:</span>
-              <span className="font-semibold text-lg">{result.disease || "Unknown"}</span>
+              <span className="text-gray-600 dark:text-gray-400">Predicted Disease:</span>
+              <span className="font-semibold text-lg text-gray-900 dark:text-white">{result.disease || "Unknown"}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Probable Risk:</span>
+              <span className="text-gray-600 dark:text-gray-400">Probable Risk:</span>
               <span className="font-bold text-2xl">{((result.probability || 0) * 100).toFixed(1)}%</span>
             </div>
-            <div className="flex justify-between items-center pt-2 border-t border-black/5">
-              <span className="text-gray-600">Status:</span>
-              <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border bg-white ${getRiskColor(result.probability || 0).replace('bg-', 'text-')}`}>
+            
+            {/* Risk Bar */}
+            <div className="pt-2">
+              <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2">
+                <div 
+                  className={`h-2 rounded-full transition-all duration-500 ${
+                    result.probability >= 0.7 ? 'bg-red-500' :
+                    result.probability >= 0.4 ? 'bg-yellow-500' : 'bg-green-500'
+                  }`}
+                  style={{ width: `${(result.probability || 0) * 100}%` }}
+                ></div>
+              </div>
+            </div>
+            
+            <div className="flex justify-between items-center pt-2 border-t border-black/5 dark:border-white/10">
+              <span className="text-gray-600 dark:text-gray-400">Status:</span>
+              <span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide ${
+                result.probability >= 0.7 ? 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-400' :
+                result.probability >= 0.4 ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-400' :
+                'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-400'
+              }`}>
                 {result.class || (result.probability >= 0.7 ? "Critical" : result.probability >= 0.4 ? "Moderate" : "Low Risk")}
               </span>
             </div>

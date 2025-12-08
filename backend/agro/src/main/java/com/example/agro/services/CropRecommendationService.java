@@ -29,6 +29,12 @@ public class CropRecommendationService {
         entity.setConfidence(resp.getConfidence());
         entity.setRecommendationTime(LocalDateTime.now());
 
+        // Save input parameters for history display
+        entity.setNitrogen(req.soil_n);
+        entity.setPhosphorus(req.soil_p);
+        entity.setPotassium(req.soil_k);
+        entity.setRainfall(req.rainfall);
+
         // Rolling History: Keep max 4
         if (req.getFieldId() != null) {
             var history = cropRecommendationRepository.findByFieldIdOrderByRecommendationTimeDesc(req.getFieldId());

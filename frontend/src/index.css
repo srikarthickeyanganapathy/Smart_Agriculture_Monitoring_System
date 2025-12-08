@@ -1,124 +1,429 @@
+/* =========================================
+   SMART AGRICULTURE MONITORING SYSTEM
+   Premium Design System
+   Inspired by: CRED + Apple + HackerRank
+   ========================================= */
+
 /* Import fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 /* Import Tailwind v4 */
 @import "tailwindcss";
 
-/* --------------------------------------
-   Base Styling (compatible with Tailwind v4)
-   -------------------------------------- */
+/* Enable dark mode with class strategy (Tailwind v4) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* =========================================
+   CSS Custom Properties (Design Tokens)
+   ========================================= */
+:root {
+  /* Agriculture-inspired color palette */
+  --color-earth-50: #faf5f0;
+  --color-earth-100: #f0e6d8;
+  --color-earth-900: #3d2914;
+
+  --color-leaf-50: #f0fdf4;
+  --color-leaf-100: #dcfce7;
+  --color-leaf-200: #bbf7d0;
+  --color-leaf-300: #86efac;
+  --color-leaf-400: #4ade80;
+  --color-leaf-500: #22c55e;
+  --color-leaf-600: #16a34a;
+  --color-leaf-700: #15803d;
+  --color-leaf-800: #166534;
+  --color-leaf-900: #14532d;
+
+  --color-sky-400: #38bdf8;
+  --color-sky-500: #0ea5e9;
+
+  --color-sun-400: #facc15;
+  --color-sun-500: #eab308;
+
+  /* CRED-inspired dark palette */
+  --color-dark-900: #0a0a0a;
+  --color-dark-800: #121212;
+  --color-dark-700: #1a1a1a;
+  --color-dark-600: #242424;
+  --color-dark-500: #2d2d2d;
+  --color-dark-400: #404040;
+  --color-dark-300: #525252;
+  --color-dark-200: #737373;
+  --color-dark-100: #a3a3a3;
+
+  /* Accent gradient (CRED gold-ish but agriculture green) */
+  --gradient-premium: linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #15803d 100%);
+  --gradient-gold: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+  --gradient-dark: linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 100%);
+  --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-glow-green: 0 0 40px rgba(34, 197, 94, 0.3);
+  --shadow-glow-gold: 0 0 40px rgba(251, 191, 36, 0.3);
+
+  /* Timing */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-expo: cubic-bezier(0.87, 0, 0.13, 1);
+}
+
+/* =========================================
+   Base Styling
+   ========================================= */
 @layer base {
-  html, body, :root {
+
+  html,
+  body,
+  :root {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
   }
 
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     box-sizing: inherit;
   }
 
   body {
-    /* Tailwind v4 cannot @apply unknown fonts */
-    font-family: 'Inter', system-ui, sans-serif;
-
-    /* Light theme */
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     background: #ffffff;
     color: #111111;
-
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-weight: 700;
     margin: 0;
+    letter-spacing: -0.02em;
+  }
+
+  /* Focus states for accessibility */
+  *:focus-visible {
+    outline: 2px solid var(--color-leaf-500);
+    outline-offset: 2px;
   }
 }
 
-/* --------------------------------------
-   Scrollbar (raw CSS — Tailwind cannot style pseudo-elements)
-   -------------------------------------- */
+/* =========================================
+   Scrollbar (Premium Dark Style)
+   ========================================= */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f0f0f0;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cccccc;
+  background: rgba(128, 128, 128, 0.3);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #999999;
+  background: rgba(128, 128, 128, 0.5);
 }
 
-/* Firefox */
 html {
-  scrollbar-color: #cccccc #f0f0f0;
+  scrollbar-color: rgba(128, 128, 128, 0.3) transparent;
   scrollbar-width: thin;
 }
 
-/* --------------------------------------
-   Animations (ALL-Compatible)
-   -------------------------------------- */
+/* =========================================
+   Animations (Premium CRED-style)
+   ========================================= */
 @keyframes fadeIn {
-  from { opacity: 0 }
-  to { opacity: 1 }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes scaleIn {
-  from { transform: scale(.95); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 40px rgba(34, 197, 94, 0.6);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes bounce-subtle {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+/* Animation utility classes */
 .animate-fade-in {
-  animation: fadeIn .4s ease-out both;
+  animation: fadeIn 0.5s var(--ease-out-expo) forwards;
 }
 
-.animate-slide-up {
-  animation: slideUp .45s ease-out both;
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s var(--ease-out-expo) forwards;
+}
+
+.animate-fade-in-down {
+  animation: fadeInDown 0.5s var(--ease-out-expo) forwards;
 }
 
 .animate-scale-in {
-  animation: scaleIn .35s ease-out both;
+  animation: scaleIn 0.4s var(--ease-out-expo) forwards;
 }
 
-/* --------------------------------------
-   Card Hover Effect
-   -------------------------------------- */
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 4s ease infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+}
+
+.animate-bounce-subtle {
+  animation: bounce-subtle 2s ease-in-out infinite;
+}
+
+/* Staggered animation delays */
+.delay-100 {
+  animation-delay: 100ms;
+}
+
+.delay-200 {
+  animation-delay: 200ms;
+}
+
+.delay-300 {
+  animation-delay: 300ms;
+}
+
+.delay-400 {
+  animation-delay: 400ms;
+}
+
+.delay-500 {
+  animation-delay: 500ms;
+}
+
+/* =========================================
+   Glassmorphism (CRED signature effect)
+   ========================================= */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-light {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.glass-dark {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* =========================================
+   Card Effects
+   ========================================= */
 .card-hover {
-  transition: transform .3s ease, box-shadow .3s ease;
+  transition: transform 0.4s var(--ease-out-expo), box-shadow 0.4s var(--ease-out-expo);
 }
 
 .card-hover:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  transform: translateY(-8px);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(34, 197, 94, 0.1);
 }
 
-/* --------------------------------------
-   Glass Effect
-   -------------------------------------- */
-.glass-effect {
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: 12px;
+.card-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.5s var(--ease-out-expo);
 }
 
-/* --------------------------------------
-   Simple Safe Ripple Effect
-   -------------------------------------- */
+.card-3d:hover {
+  transform: perspective(1000px) rotateX(2deg) rotateY(-2deg) translateZ(10px);
+}
+
+/* =========================================
+   Gradient Utilities
+   ========================================= */
+.gradient-text {
+  background: var(--gradient-premium);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-gold {
+  background: var(--gradient-gold);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-border {
+  position: relative;
+  background: linear-gradient(var(--color-dark-800), var(--color-dark-800)) padding-box,
+    var(--gradient-premium) border-box;
+  border: 2px solid transparent;
+  border-radius: 16px;
+}
+
+/* =========================================
+   Button Effects
+   ========================================= */
+.btn-premium {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s var(--ease-out-expo);
+}
+
+.btn-premium::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.btn-premium:hover::before {
+  opacity: 1;
+}
+
+.btn-premium:active {
+  transform: scale(0.98);
+}
+
 .btn-ripple {
   position: relative;
   overflow: hidden;
@@ -129,29 +434,123 @@ html {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: rgba(0,0,0,0.1);
-  animation: ripple-effect .4s ease-out;
+  background: rgba(255, 255, 255, 0.2);
+  animation: ripple-effect 0.5s ease-out;
 }
 
 @keyframes ripple-effect {
-  from { opacity: 0.4 }
-  to { opacity: 0 }
+  from {
+    opacity: 0.5;
+    transform: scale(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(2);
+  }
 }
 
-/* --------------------------------------
-   Skeleton Loader
-   -------------------------------------- */
+/* =========================================
+   Skeleton Loader (Premium)
+   ========================================= */
 @keyframes skeleton-loading {
-  0% { background-position: -200px 0 }
-  100% { background-position: calc(200px + 100%) 0 }
+  0% {
+    background-position: -200px 0;
+  }
+
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
 }
 
 .skeleton {
   background: linear-gradient(90deg, #e0e0e0 0px, #f5f5f5 40px, #e0e0e0 80px);
   background-size: 200px 100%;
   animation: skeleton-loading 1.2s infinite linear;
+  border-radius: 8px;
 }
 
-/* Hide scrollbars but keep scroll functionality */
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { scrollbar-width: none; }
+.skeleton-dark {
+  background: linear-gradient(90deg, #1a1a1a 0px, #2d2d2d 40px, #1a1a1a 80px);
+  background-size: 200px 100%;
+  animation: skeleton-loading 1.2s infinite linear;
+  border-radius: 8px;
+}
+
+/* =========================================
+   Glow Effects
+   ========================================= */
+.glow-green {
+  box-shadow: 0 0 30px rgba(34, 197, 94, 0.4);
+}
+
+.glow-gold {
+  box-shadow: 0 0 30px rgba(251, 191, 36, 0.4);
+}
+
+.glow-ring::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: var(--gradient-premium);
+  z-index: -1;
+  filter: blur(8px);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.glow-ring:hover::before {
+  opacity: 0.6;
+}
+
+/* =========================================
+   Dark Section Theme
+   ========================================= */
+.dark-section {
+  background: var(--color-dark-900);
+  color: #ffffff;
+}
+
+.dark-section h1,
+.dark-section h2,
+.dark-section h3 {
+  color: #ffffff;
+}
+
+.dark-section p {
+  color: var(--color-dark-100);
+}
+
+/* =========================================
+   Utility Classes
+   ========================================= */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+/* Premium border effect */
+.border-gradient {
+  border: double 2px transparent;
+  background-image: linear-gradient(#fff, #fff), var(--gradient-premium);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+/* Noise texture overlay */
+.noise-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  pointer-events: none;
+}

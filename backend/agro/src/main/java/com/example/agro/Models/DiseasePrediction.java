@@ -25,6 +25,13 @@ public class DiseasePrediction {
     @Column(name = "prediction_time", nullable = false)
     private LocalDateTime predictionTime;
 
+    // Input parameters for display in history
+    @Column(name = "temperature")
+    private Double temperature;
+
+    @Column(name = "moisture")
+    private Double moisture;
+
     // Getters and Setters
     public Long getId() {
         return id;
@@ -72,5 +79,37 @@ public class DiseasePrediction {
 
     public void setPredictionTime(LocalDateTime predictionTime) {
         this.predictionTime = predictionTime;
+    }
+
+    public Double getTemperature() {
+        return temperature;
+    }
+
+    public void setTemperature(Double temperature) {
+        this.temperature = temperature;
+    }
+
+    public Double getMoisture() {
+        return moisture;
+    }
+
+    public void setMoisture(Double moisture) {
+        this.moisture = moisture;
+    }
+
+    // Computed color based on disease status
+    @Transient
+    public String getColor() {
+        if (disease == null)
+            return "#95a5a6"; // Gray for unknown
+        String lower = disease.toLowerCase();
+        if (lower.contains("healthy") || lower.equals("none")) {
+            return "#2ecc71"; // Green for healthy
+        }
+        // Diseased - color based on probability (severity)
+        if (probability != null && probability >= 0.7) {
+            return "#e74c3c"; // Red for high probability disease
+        }
+        return "#e67e22"; // Orange for moderate probability disease
     }
 }
