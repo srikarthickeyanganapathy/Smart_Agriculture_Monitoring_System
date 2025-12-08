@@ -54,6 +54,19 @@ public class FieldHistory {
     @Column(name = "crop_name")
     private String cropName;
 
+    // Growth Stage / Simulation Progress
+    @Column(name = "sim_day")
+    private Integer day = 0;
+
+    @Column(name = "growth_stage")
+    private String growthStage = "seedling";
+
+    @Column(name = "maturity_pct")
+    private Double maturityPct = 0.0;
+
+    @Column(name = "days_to_harvest")
+    private Integer daysToHarvest = 120;
+
     // Getters and Setters
     public Long getId() {
         return id;
@@ -173,5 +186,38 @@ public class FieldHistory {
 
     public void setRainfall(Double rainfall) {
         this.rainfall = rainfall;
+    }
+
+    // Growth stage getters/setters
+    public Integer getDay() {
+        return day;
+    }
+
+    public void setDay(Integer day) {
+        this.day = day;
+    }
+
+    public String getGrowthStage() {
+        return growthStage;
+    }
+
+    public void setGrowthStage(String growthStage) {
+        this.growthStage = growthStage;
+    }
+
+    public Double getMaturityPct() {
+        return maturityPct;
+    }
+
+    public void setMaturityPct(Double maturityPct) {
+        this.maturityPct = maturityPct;
+    }
+
+    public Integer getDaysToHarvest() {
+        return daysToHarvest;
+    }
+
+    public void setDaysToHarvest(Integer daysToHarvest) {
+        this.daysToHarvest = daysToHarvest;
     }
 }

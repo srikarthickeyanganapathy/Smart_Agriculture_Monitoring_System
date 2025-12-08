@@ -153,7 +153,7 @@ const Login = () => {
                 <span className="text-gray-500">User:</span> admin
               </div>
               <div className="px-3 py-1.5 bg-white/5 rounded-lg text-gray-400">
-                <span className="text-gray-500">Pass:</span> password
+                <span className="text-gray-500">Pass:</span> password123
               </div>
             </div>
           </div>

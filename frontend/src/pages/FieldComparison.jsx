@@ -32,7 +32,7 @@ const FieldComparison = () => {
               }, {})
             };
             
-            const updated = [...prev, newEntry].slice(-10); // Keep last 10 entries
+            const updated = [...prev, newEntry].slice(-50); // Keep last 10 entries
             return updated;
           });
           setLoading(false);

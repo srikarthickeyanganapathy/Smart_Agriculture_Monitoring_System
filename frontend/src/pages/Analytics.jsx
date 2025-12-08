@@ -163,6 +163,125 @@ const Analytics = () => {
         </div>
       </div>
 
+      {/* Field Simulation Status */}
+      <div className="mb-12">
+        <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-lg shadow-gray-200/50 dark:shadow-none overflow-hidden">
+          <div className="bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border-b border-gray-100 dark:border-gray-800 px-6 sm:px-8 py-5">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+                  Field Simulation Status
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Crop growth stages and harvest predictions
+                </p>
+              </div>
+              <span className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-xs font-medium">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                AI Simulation
+              </span>
+            </div>
+          </div>
+          <div className="p-4 sm:p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {fields.map((field, idx) => {
+                const growthStage = field.growth_stage || field.growthStage || 'seedling';
+                const maturity = field.maturity_pct || field.maturityPct || 0;
+                const daysToHarvest = field.days_to_harvest || field.daysToHarvest || 120;
+                const cropType = field.crop_type || field.cropType || 'corn';
+                const day = field.day || 0;
+                
+                const stageColors = {
+                  seedling: 'from-yellow-400 to-yellow-500',
+                  vegetative: 'from-green-400 to-green-500',
+                  flowering: 'from-pink-400 to-pink-500',
+                  maturation: 'from-orange-400 to-orange-500',
+                  harvest_ready: 'from-amber-400 to-amber-500'
+                };
+                
+                const stageIcons = {
+                  seedling: '🌱',
+                  vegetative: '🌿',
+                  flowering: '🌸',
+                  maturation: '🌾',
+                  harvest_ready: '✂️'
+                };
+
+                return (
+                  <div 
+                    key={field.fieldId || field.field_id || idx}
+                    className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-2xl border border-gray-100 dark:border-gray-700 p-5 hover:shadow-lg transition-all duration-300"
+                  >
+                    {/* Field Header */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stageColors[growthStage] || 'from-gray-400 to-gray-500'} flex items-center justify-center text-white text-lg`}>
+                          {stageIcons[growthStage] || '🌱'}
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-gray-900 dark:text-white">
+                            Field {field.fieldId || field.field_id || idx + 1}
+                          </h3>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+                            {cropType}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full">
+                        Day {day}
+                      </span>
+                    </div>
+
+                    {/* Growth Stage */}
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
+                          {growthStage.replace('_', ' ')}
+                        </span>
+                        <span className="text-sm font-bold text-green-600 dark:text-green-400">
+                          {maturity.toFixed(1)}%
+                        </span>
+                      </div>
+                      <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full bg-gradient-to-r ${stageColors[growthStage] || 'from-gray-400 to-gray-500'} rounded-full transition-all duration-500`}
+                          style={{ width: `${Math.min(100, maturity)}%` }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    {/* Stats Row */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-white dark:bg-gray-800 rounded-xl p-3 border border-gray-100 dark:border-gray-700">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Days to Harvest</p>
+                        <p className="text-lg font-bold text-gray-900 dark:text-white">{daysToHarvest}</p>
+                      </div>
+                      <div className="bg-white dark:bg-gray-800 rounded-xl p-3 border border-gray-100 dark:border-gray-700">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">NDVI</p>
+                        <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                          {(field.avgNdvi || field.avg_ndvi || 0).toFixed(3)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {fields.length === 0 && (
+              <div className="text-center py-12 text-gray-400">
+                <svg className="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm">No field data available</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
         {/* Alerts Panel */}
