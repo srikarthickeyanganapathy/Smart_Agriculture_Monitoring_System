@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useAlerts } from "../context/AlertsContext";
+import http from "../api/httpClient";
 
 const Login = () => {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
@@ -29,9 +30,11 @@ const Login = () => {
     setError("");
 
     try {
-      const response = await axios.post("http://localhost:8080/api/auth/login", {
+      const response = await http.post("/auth/login", {
         username: credentials.email,
         password: credentials.password,
+      }, {
+        baseURL: import.meta.env.VITE_API_URL?.replace('/v1', '') || "http://localhost:8080/api"
       });
 
       const { token } = response.data;
