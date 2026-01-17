@@ -22,8 +22,15 @@ namespace SmartAgri.Recommendation.Services
         public void TrainAndSaveModel()
         {
             // Path to the rebuilt dataset
-            string dataPath = @"C:\Users\SEC\OneDrive\Desktop\Project\Final Year Project\Smart_Agriculture_Monitoring_System\backend\dotnet-services\crop_recommendation_rebuilt.csv";
+            string dataPath = Path.Combine(AppContext.BaseDirectory, "crop_recommendation_rebuilt.csv");
 
+            Console.WriteLine($"Looking for dataset at: {dataPath}");
+
+            if (!File.Exists(dataPath)) 
+            {
+                throw new FileNotFoundException($"Dataset not found at {dataPath}. Did you forget to copy it to the build output?");
+            }
+            
             Console.WriteLine("Loading and validating data...");
             IDataView data = _mlContext.Data.LoadFromTextFile<CropData>(
                 path: dataPath, 
