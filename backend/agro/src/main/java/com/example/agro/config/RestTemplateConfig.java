@@ -1,5 +1,6 @@
 package com.example.agro.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -7,17 +8,23 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Configuration
 public class RestTemplateConfig {
 
+    @Value("${services.python-ml.base-url}")
+    private String pythonServiceUrl;
+
+    @Value("${services.dotnet-recommendation.base-url}")
+    private String dotnetServiceUrl;
+
     @Bean
     public WebClient pythonWebClient() {
         return WebClient.builder()
-                .baseUrl("http://localhost:8001") // python ml service address
+                .baseUrl(pythonServiceUrl) // Now uses the Render URL
                 .build();
     }
 
     @Bean
     public WebClient dotnetWebClient() {
         return WebClient.builder()
-                .baseUrl("http://localhost:5000") // dotnet recommendation service
+                .baseUrl(dotnetServiceUrl) // Now uses the Render URL
                 .build();
     }
 }
