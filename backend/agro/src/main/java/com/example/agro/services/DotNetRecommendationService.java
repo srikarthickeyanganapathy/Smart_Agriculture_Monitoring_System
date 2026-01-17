@@ -20,14 +20,13 @@ public class DotNetRecommendationService {
             Map<String, Object> payload = new java.util.HashMap<>();
             // Map to keys expected by .NET Service
             if (req.getFieldId() != null)
-                payload.put("fieldId", req.getFieldId());
             payload.put("nitrogen", req.soil_n);
             payload.put("phosphorus", req.soil_p);
             payload.put("potassium", req.soil_k);
             payload.put("ph", req.ph);
             payload.put("rainfall", req.rainfall);
             payload.put("temperature", req.temperature);
-            payload.put("moisture", req.soil_moisture);
+            payload.put("SoilMoisture", req.soil_moisture);
 
             Map resp = dotnetWebClient.post()
                     .uri("/api/recommend/crop") 
