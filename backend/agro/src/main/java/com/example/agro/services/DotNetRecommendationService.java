@@ -1,12 +1,13 @@
 package com.example.agro.services;
 
-import com.example.agro.dto.CropRecommendationRequest;
-import com.example.agro.dto.CropRecommendationResponse;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.Map;
+import com.example.agro.dto.CropRecommendationRequest;
+import com.example.agro.dto.CropRecommendationResponse;
 
 @Service
 public class DotNetRecommendationService {
@@ -16,9 +17,8 @@ public class DotNetRecommendationService {
 
     public CropRecommendationResponse recommendCrop(CropRecommendationRequest req) {
         try {
-            // .NET Service is at port 5001
             Map<String, Object> payload = new java.util.HashMap<>();
-            // Map to keys expected by .NET Service (flat structure now)
+            // Map to keys expected by .NET Service
             if (req.getFieldId() != null)
                 payload.put("fieldId", req.getFieldId());
             payload.put("nitrogen", req.soil_n);
@@ -30,7 +30,7 @@ public class DotNetRecommendationService {
             payload.put("moisture", req.soil_moisture);
 
             Map resp = dotnetWebClient.post()
-                    .uri("http://localhost:5001/api/recommend/crop")
+                    .uri("/api/recommend/crop") 
                     .bodyValue(payload)
                     .retrieve()
                     .bodyToMono(Map.class)
@@ -42,6 +42,10 @@ public class DotNetRecommendationService {
                     java.util.List.of());
             return out;
         } catch (Exception e) {
+            // Added error logging to help debug deployment issues
+            System.err.println("Error calling .NET Service: " + e.getMessage());
+            e.printStackTrace();
+
             CropRecommendationResponse out = new CropRecommendationResponse();
             out.status = "error";
             out.recommendations = java.util.List.of();
