@@ -22,16 +22,14 @@ const OptimizeIcon = () => (
 );
 
 const LandingPage = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated] = useState(() => !!localStorage.getItem("token"));
   const [scrolled, setScrolled] = useState(false);
   const { isDark } = useTheme();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    setIsAuthenticated(!!token);
-    
     const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
+    handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 

@@ -4,6 +4,7 @@ import java.security.Key;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -21,6 +22,9 @@ public class JwtUtil {
 
     @Value("${jwt.secret}")
     private String SECRET;
+
+    @Value("${jwt.expirationMs:36000000}")
+    private long expirationMs;
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -72,14 +76,26 @@ public class JwtUtil {
                 .setClaims(claims)
                 .setSubject(username)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 36000000))  // 10 hours
+                .setExpiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
     private Key getSignKey() {
-        // SECRET is Base64 encoded
-        byte[] keyBytes = Base64.getDecoder().decode(SECRET);
+        byte[] keyBytes = decodeSecret(SECRET);
         return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    private byte[] decodeSecret(String secret) {
+        String normalizedSecret = secret == null ? "" : secret.trim();
+        if (normalizedSecret.isEmpty()) {
+            throw new IllegalStateException("JWT secret is not configured.");
+        }
+
+        if (normalizedSecret.matches("^[0-9a-fA-F]+$") && normalizedSecret.length() % 2 == 0) {
+            return HexFormat.of().parseHex(normalizedSecret);
+        }
+
+        return Base64.getDecoder().decode(normalizedSecret);
     }
 }

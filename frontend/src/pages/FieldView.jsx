@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import PixelFieldView from "../components/analytics/PixelFieldView";
 import { useParams, useNavigate } from "react-router-dom";
 import { getAllFields, adjustField } from "../api/analyticsAPI";
@@ -13,7 +13,7 @@ export default function FieldView() {
   const [field, setField] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchFields = async () => {
+  const fetchFields = useCallback(async () => {
     try {
       const json = await getAllFields();
       const fields = json.fields || [];
@@ -33,14 +33,14 @@ export default function FieldView() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate]);
 
   useEffect(() => {
     fetchFields();
     // poll every 3s to keep view updated like heatmap
     const t = setInterval(fetchFields, 3000);
     return () => clearInterval(t);
-  }, [id]);
+  }, [fetchFields]);
 
   const handleAdjust = async (fieldId) => {
     try {

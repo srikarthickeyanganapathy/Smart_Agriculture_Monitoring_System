@@ -1,5 +1,6 @@
 // src/pages/CropRecommendation.jsx
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import CropRecommendationForm from "../components/CropRecommendationForm";
 import { fetchFieldSimulation } from "../api/analyticsAPI";
 import { fetchCropHistory } from "../api/cropAPI";
@@ -135,16 +136,16 @@ const CropRecommendation = () => {
                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                    Recent
                 </h3>
-                <a href="/recommendations/crop/history" className="text-sm font-medium text-green-600 dark:text-green-400 hover:text-green-700 hover:underline">
+                <Link to="/recommendations/crop/history" className="text-sm font-medium text-green-600 dark:text-green-400 hover:text-green-700 hover:underline">
                   View All
-                </a>
+                </Link>
               </div>
               
               <div className="space-y-4">
                 {history.length > 0 ? (
                    history.slice(0, 5).map((item, i) => {
                      const name = item.cropName || item.recommendedCrop || item.crop || "Unknown";
-                     const time = item.predictionDate || item.predictionTime || Date.now();
+                     const time = item.predictionDate || item.predictionTime || null;
                      
                      return (
                        <div key={i} className="flex items-center gap-4 p-4 rounded-xl bg-gray-50/80 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 hover:border-green-200 dark:hover:border-green-800 transition-colors group">
@@ -160,7 +161,7 @@ const CropRecommendation = () => {
                                   Field {item.fieldId}
                                </span>
                                <span>
-                                  {new Date(time).toLocaleDateString(undefined, {month:'short', day:'numeric', hour:'numeric', minute:'numeric'})}
+                                  {time ? new Date(time).toLocaleDateString(undefined, {month:'short', day:'numeric', hour:'numeric', minute:'numeric'}) : 'Time unavailable'}
                                </span>
                             </div>
                           </div>
@@ -176,9 +177,9 @@ const CropRecommendation = () => {
               
               {history.length > 5 && (
                 <div className="mt-6 text-center">
-                  <a href="/recommendations/crop/history" className="text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white font-medium">
+                  <Link to="/recommendations/crop/history" className="text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white font-medium">
                      + {history.length - 5} older records
-                  </a>
+                  </Link>
                 </div>
               )}
            </div>

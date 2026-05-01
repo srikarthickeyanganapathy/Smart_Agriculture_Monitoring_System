@@ -35,7 +35,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(req -> {
                     var config = new CorsConfiguration();
                     config.setAllowedOrigins(
-                            List.of("http://localhost:5173", "http://localhost:3000", "http://localhost:8001", "https://smart-agri-tech-sams.netlify.app/", "https://smart-agriculture-monitoring-system-1.onrender.com", "https://smart-agriculture-monitoring-system.onrender.com"));
+                            List.of("http://localhost:5173", "http://localhost:3000", "http://localhost:8001", "https://smart-agri-tech-sams.netlify.app", "https://smart-agriculture-monitoring-system-1.onrender.com", "https://smart-agriculture-monitoring-system.onrender.com"));
                     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     config.setAllowedHeaders(List.of("*"));
                     config.setAllowCredentials(true);

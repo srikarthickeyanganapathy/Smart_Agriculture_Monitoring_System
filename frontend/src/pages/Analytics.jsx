@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, memo } from "react";
-import { startSimulation, fetchFieldSimulation } from "../api/analyticsAPI";
+import { fetchFieldSimulation } from "../api/analyticsAPI";
 import Heatmap5Fields from "../components/analytics/Heatmap5Fields";
 import LiveAlerts from "../components/analytics/LiveAlerts";
 
@@ -146,7 +146,7 @@ const Analytics = () => {
                   Digital Twin Field Map
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Live visualization • Updated every 5 seconds
+                  Live visualization - Updated every 5 seconds
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -202,11 +202,11 @@ const Analytics = () => {
                 };
                 
                 const stageIcons = {
-                  seedling: '🌱',
-                  vegetative: '🌿',
-                  flowering: '🌸',
-                  maturation: '🌾',
-                  harvest_ready: '✂️'
+                  seedling: 'SG',
+                  vegetative: 'VG',
+                  flowering: 'FL',
+                  maturation: 'MT',
+                  harvest_ready: 'HR'
                 };
 
                 return (
@@ -217,8 +217,8 @@ const Analytics = () => {
                     {/* Field Header */}
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stageColors[growthStage] || 'from-gray-400 to-gray-500'} flex items-center justify-center text-white text-lg`}>
-                          {stageIcons[growthStage] || '🌱'}
+                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stageColors[growthStage] || 'from-gray-400 to-gray-500'} flex items-center justify-center text-white text-xs font-bold tracking-wide`}>
+                          {stageIcons[growthStage] || 'SG'}
                         </div>
                         <div>
                           <h3 className="font-bold text-gray-900 dark:text-white">

@@ -87,7 +87,7 @@ const CropRecommendationForm = ({ autoFilledData, fieldId, onSuccess }) => {
       return {
         type: 'single',
         crop: data.recommendedCrop || data.crop,
-        confidence: data.confidence || data.score || 0.95
+        confidence: data.confidence ?? data.score ?? 0
       };
     }
     
@@ -133,7 +133,7 @@ const CropRecommendationForm = ({ autoFilledData, fieldId, onSuccess }) => {
           <input type="number" name="rainfall" value={formData.rainfall} onChange={handleChange} className={inputClass} placeholder="20-300" required />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Temperature (°C)</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Temperature (C)</label>
           <input type="number" step="0.1" name="temperature" value={formData.temperature} onChange={handleChange} className={inputClass} placeholder="8-44" required />
         </div>
       </div>

@@ -50,7 +50,7 @@ const DiseaseHistory = () => {
             {history.length > 0 ? (
               history.map((item, i) => {
                 const name = item.disease || item.diseaseName || "Unknown";
-                const time = item.predictionTime || item.predictionDate || Date.now();
+                const time = item.predictionTime || item.predictionDate || null;
                 const isHealthy = name.toLowerCase().includes("healthy");
                 const colorClass = isHealthy ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700";
                 
@@ -73,7 +73,7 @@ const DiseaseHistory = () => {
                     <div className="space-y-2 text-sm text-gray-600 mb-4">
                        {/* Display environmental parameters if available/relevant */}
                          <div className="flex justify-between border-b border-gray-100 pb-1">
-                           <span>Temperature:</span> <span className="font-medium">{item.temperature || '-'}°C</span>
+                           <span>Temperature:</span> <span className="font-medium">{item.temperature || '-'} C</span>
                          </div>
                          <div className="flex justify-between border-b border-gray-100 pb-1">
                            <span>Humidity/Moisture:</span> <span className="font-medium">{item.humidity || item.moisture || '-'}%</span>
@@ -82,7 +82,7 @@ const DiseaseHistory = () => {
 
                     <div className="text-xs text-gray-400 pt-2 border-t border-gray-100 flex items-center gap-1">
                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                       {new Date(time).toLocaleString()}
+                       {time ? new Date(time).toLocaleString() : "Time unavailable"}
                     </div>
                   </div>
                 );

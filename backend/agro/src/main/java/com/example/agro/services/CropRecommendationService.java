@@ -19,8 +19,16 @@ public class CropRecommendationService {
     private CropRecommendationRepository cropRecommendationRepository;
 
     public CropRecommendationResponse recommendAndSave(CropRecommendationRequest req) {
+        if (req.getFieldId() == null) {
+            throw new IllegalArgumentException("fieldId is required to save crop recommendation history.");
+        }
+
         // Call the existing .NET recommendation service
         CropRecommendationResponse resp = dotNetRecommendationService.recommendCrop(req);
+
+        if (resp.recommendations == null || resp.recommendations.isEmpty()) {
+            throw new IllegalStateException("No crop recommendations were returned by the recommendation service.");
+        }
 
         // Persist the recommendation
         CropRecommendation entity = new CropRecommendation();

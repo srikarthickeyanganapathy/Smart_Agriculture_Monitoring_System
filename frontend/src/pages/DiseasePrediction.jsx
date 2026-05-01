@@ -1,5 +1,6 @@
 // src/pages/DiseasePrediction.jsx
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import DiseasePredictionForm from "../components/DiseasePredictionForm";
 import { fetchFieldSimulation } from "../api/analyticsAPI";
 import { fetchDiseaseHistory } from "../api/diseaseAPI";
@@ -187,16 +188,16 @@ const DiseasePrediction = () => {
                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                    Recent Risks
                 </h3>
-                <a href="/recommendations/disease/history" className="text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-700 hover:underline">
+                <Link to="/recommendations/disease/history" className="text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-700 hover:underline">
                   View All
-                </a>
+                </Link>
               </div>
 
               <div className="space-y-4">
                 {history.length > 0 ? (
                    history.slice(0, 5).map((item, i) => {
                      const name = item.disease || item.diseaseName || "Unknown";
-                     const time = item.predictionTime || item.predictionDate || Date.now();
+                     const time = item.predictionTime || item.predictionDate || null;
                      
                      const isHealthy = name.toLowerCase().includes("healthy");
                      const colorClass = isHealthy 
@@ -220,7 +221,7 @@ const DiseasePrediction = () => {
                                   Field {item.fieldId} {item.plantId ? `(P${item.plantId})` : ''}
                                </span>
                                <span>
-                                  {new Date(time).toLocaleDateString(undefined, {month:'short', day:'numeric', hour:'numeric', minute:'numeric'})}
+                                  {time ? new Date(time).toLocaleDateString(undefined, {month:'short', day:'numeric', hour:'numeric', minute:'numeric'}) : 'Time unavailable'}
                                </span>
                             </div>
                           </div>
@@ -236,9 +237,9 @@ const DiseasePrediction = () => {
               
               {history.length > 5 && (
                 <div className="mt-6 text-center">
-                  <a href="/recommendations/disease/history" className="text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white font-medium">
+                  <Link to="/recommendations/disease/history" className="text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white font-medium">
                      + {history.length - 5} older records
-                  </a>
+                  </Link>
                 </div>
               )}
            </div>

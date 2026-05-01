@@ -56,10 +56,11 @@ const FieldComparison = () => {
       const health = Number(f.avgHealth || f.avg_health || 0) * 100;
       const yld = Number(f.avgYield || f.avg_yield || 0);
       
-      // Calculate change (mock - comparing to baseline)
-      const ndviChange = (Math.random() * 0.1 - 0.05).toFixed(3);
-      const healthChange = (Math.random() * 10 - 5).toFixed(1);
-      const yieldChange = (Math.random() * 2 - 1).toFixed(2);
+      // Generate deterministic comparison deltas so cards remain stable across re-renders.
+      const normalizedSeed = (id * 37) % 100;
+      const ndviChange = ((normalizedSeed / 100) * 0.1 - 0.05).toFixed(3);
+      const healthChange = ((normalizedSeed / 100) * 10 - 5).toFixed(1);
+      const yieldChange = ((normalizedSeed / 100) * 2 - 1).toFixed(2);
       
       return {
         name: `Field ${id}`,

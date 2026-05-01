@@ -1,7 +1,7 @@
-import React, { Suspense, lazy, useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, useNavigate, Link } from "react-router-dom";
 import { AlertsProvider, useAlerts } from "./context/AlertsContext";
-import { ThemeProvider, useTheme, ThemeToggle } from "./context/ThemeContext";
+import { ThemeProvider, ThemeToggle } from "./context/ThemeContext";
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Lazy load pages for better performance

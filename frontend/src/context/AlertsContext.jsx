@@ -19,7 +19,6 @@ export function AlertsProvider({ children }) {
       es = new EventSource(url);
 
       es.onopen = () => {
-        console.log("SSE open");
         reconnectDelay = 1000;
       };
 
@@ -76,7 +75,9 @@ export function AlertsProvider({ children }) {
 
       es.onerror = (err) => {
         console.error("SSE error", err);
-        try { es.close(); } catch (_) {}
+        if (es) {
+          es.close();
+        }
         setTimeout(() => {
           reconnectDelay = Math.min(60000, reconnectDelay * 2);
           // Only reconnect if we still have a token (user didn't logout in the meantime)
@@ -86,7 +87,11 @@ export function AlertsProvider({ children }) {
     };
 
     connect();
-    return () => { try { es.close(); } catch(_) {} };
+    return () => {
+      if (es) {
+        es.close();
+      }
+    };
   }, [token]);
 
   const clearFieldAlertsLocal = (fieldId) => {

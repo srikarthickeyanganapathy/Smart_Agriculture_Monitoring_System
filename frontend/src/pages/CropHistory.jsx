@@ -50,7 +50,7 @@ const CropHistory = () => {
             {history.length > 0 ? (
               history.map((item, i) => {
                 const name = item.cropName || item.recommendedCrop || item.crop || "Unknown";
-                const time = item.predictionDate || item.predictionTime || Date.now();
+                const time = item.predictionDate || item.predictionTime || null;
                 return (
                   <div key={i} className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start mb-4">
@@ -81,7 +81,7 @@ const CropHistory = () => {
 
                     <div className="text-xs text-gray-400 pt-2 border-t border-gray-100 flex items-center gap-1">
                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                       {new Date(time).toLocaleString()}
+                       {time ? new Date(time).toLocaleString() : "Time unavailable"}
                     </div>
                   </div>
                 );

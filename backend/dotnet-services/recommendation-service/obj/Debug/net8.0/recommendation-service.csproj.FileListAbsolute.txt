@@ -71,3 +71,4 @@ C:\Users\SEC\OneDrive\Desktop\Project\Final Year Project\Smart_Agriculture_Monit
 C:\Users\SEC\OneDrive\Desktop\Project\Final Year Project\Smart_Agriculture_Monitoring_System\backend\dotnet-services\recommendation-service\bin\Debug\net8.0\runtimes\osx-x64\native\lib_lightgbm.dylib
 C:\Users\SEC\OneDrive\Desktop\Project\Final Year Project\Smart_Agriculture_Monitoring_System\backend\dotnet-services\recommendation-service\bin\Debug\net8.0\runtimes\win-x64\native\lib_lightgbm.dll
 C:\Users\SEC\OneDrive\Desktop\Project\Final Year Project\Smart_Agriculture_Monitoring_System\backend\dotnet-services\recommendation-service\bin\Debug\net8.0\runtimes\win-x64\native\lightgbm.exe
+C:\Users\SEC\OneDrive\Desktop\Project\Final Year Project\Smart_Agriculture_Monitoring_System\backend\dotnet-services\recommendation-service\bin\Debug\net8.0\crop_recommendation_rebuilt.csv

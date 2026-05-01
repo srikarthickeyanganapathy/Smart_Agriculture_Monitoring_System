@@ -1,0 +1,9 @@
+Method,Name,Error,Occurrences
+GET,/api/v1/analytics/start,HTTPError('403 Client Error:  for url: /api/v1/analytics/start'),1254
+GET,/api/v1/analytics/fields/4,HTTPError('403 Client Error:  for url: /api/v1/analytics/fields/4'),129
+GET,/api/v1/analytics/fields,HTTPError('403 Client Error:  for url: /api/v1/analytics/fields'),3226
+GET,/api/v1/analytics/fields/1,HTTPError('403 Client Error:  for url: /api/v1/analytics/fields/1'),117
+POST,/api/v1/predict/disease,HTTPError('403 Client Error:  for url: /api/v1/predict/disease'),641
+GET,/api/v1/analytics/fields/3,HTTPError('403 Client Error:  for url: /api/v1/analytics/fields/3'),124
+GET,/api/v1/analytics/fields/5,HTTPError('403 Client Error:  for url: /api/v1/analytics/fields/5'),137
+GET,/api/v1/analytics/fields/2,HTTPError('403 Client Error:  for url: /api/v1/analytics/fields/2'),125

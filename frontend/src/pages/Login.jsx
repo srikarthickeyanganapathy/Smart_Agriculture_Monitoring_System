@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAlerts } from "../context/AlertsContext";
 import http from "../api/httpClient";
@@ -43,7 +42,7 @@ const Login = () => {
       navigate("/analytics");
     } catch (err) {
       if (err.response) {
-        setError(err.response.data?.message || "Invalid credentials. Please try again.");
+        setError(err.response.data?.error || err.response.data?.message || "Invalid credentials. Please try again.");
       } else if (err.request) {
         setError("Unable to connect to server. Please check your connection.");
       } else {

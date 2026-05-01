@@ -1,5 +1,8 @@
 import http from "./httpClient";
 
+const apiBaseUrl = (import.meta.env.VITE_API_URL || "http://localhost:8080/api/v1").replace(/\/$/, "");
+const alertsBaseUrl = import.meta.env.VITE_ALERTS_SSE_URL || `${apiBaseUrl}/analytics/alerts/sse`;
+
 // Start the digital twin simulation
 export const startSimulation = () => http.get("/analytics/start");
 
@@ -39,7 +42,7 @@ export const adjustField = (fieldId) => http.post("/analytics/adjust", { fieldId
 export const clearAlerts = (fieldId) => http.post("/analytics/alerts/clear", { fieldId }).then(r => r.data);
 
 // SSE URL for real-time alerts (Spring Boot streams these)
-export const ALERTS_SSE_URL = import.meta.env.VITE_ALERTS_SSE_URL || "http://localhost:8080/api/v1/analytics/alerts/sse";
+export const ALERTS_SSE_URL = alertsBaseUrl;
 
 // Disease prediction (Python ML via Spring Boot proxy)
 export const predictDisease = (payload) => http.post("/predict/disease", payload).then(r => r.data);
