@@ -3,7 +3,7 @@
 ║  API Latency Benchmark - FastAPI ML Inference Endpoint         ║
 ║  For IEEE Paper: Smart Agriculture Monitoring System           ║
 ║                                                                ║
-║  Target:  POST http://localhost:8001/predict/disease            ║
+║  Target:  POST http://localhost:8001/predict/disease           ║
 ║  Method:  50 sequential requests with realistic payload        ║
 ╚══════════════════════════════════════════════════════════════════╝
 
